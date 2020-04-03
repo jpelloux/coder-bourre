@@ -15,7 +15,11 @@ router.get('/', function (req, res, next) {
 			players[socket.id] = {
 				x: 300,
 				y: 300
-				};
+			};
+
+		socket.on("disconnect", function () {
+			delete players[socket.id];
+		})
 	});
 	socket.on('movement', function(data) {
 		var player = players[socket.id] || {};
@@ -36,9 +40,9 @@ router.get('/', function (req, res, next) {
 	setInterval(function() {
 		io.sockets.emit('state', players);
 	}, 1000 / 60);
-	res.sendFile("game.html",  {root:'./views'});
-	
 
+
+	res.sendFile("game.html",  {root:'./views'});
 });
 
 module.exports = router;
