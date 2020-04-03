@@ -6,10 +6,18 @@
 </head>
 <body>
 	<div id="pregameLobby">
-		<input type="text" id="playerName"/>
-		<button onclick="playerConnection()">Connect</button>
-		<button onclick="newGame()">Nouvelle partie</button>
-		<div id="playerList"></div>
+		<h1>FUCK THE DEALER</h1>
+		<label for="playerName">Surnom : </label>
+		<input type="text" id="playerName" name="playerName"/>
+		<br/>
+		<br/>
+		<button onclick="playerConnection()">Rejoindre</button>
+		<br/>
+		<h2>Joueurs en attente</h2>
+		<div id="playerList">
+			<ul></ul>
+		</div>
+		<button onclick="newGame()">Lancer la partie</button>
 	</div>
 	<div id="game">
 		<table>

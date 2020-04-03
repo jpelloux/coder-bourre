@@ -35,9 +35,9 @@ function addPlayers(names)
 {
 	var html = "";
 	players = names;
-	names.forEach(e => html += e + "<br>")
+	names.forEach(e => html += "<li>" + e + "</li>");
 
-	$("#playerList").html(html)
+	$("#playerList > ul").html(html)
 }
 
 function newGame()

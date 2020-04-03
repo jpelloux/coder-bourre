@@ -15,6 +15,21 @@ table td
 	text-align: center;
 	width: inherit;
 }
+h1
+{
+	text-align: center;
+}
+#pregameLobby
+{
+	margin: auto;
+	padding: 15px;
+	width: 33%;
+	border: solid 1px black;
+}
+#playerList
+{
+	border: solid 1px black;
+}
 #game
 {
 	display: none;
