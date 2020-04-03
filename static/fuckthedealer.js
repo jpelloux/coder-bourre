@@ -1,12 +1,26 @@
-var socket = io();
+var name;
+var players = [];
+var socket = io({transports: ['websocket'], upgrade: false});
+console.log(socket.id);
 
 
 function playerConnection()
 {
-	var name = $("#playerName").val()
+	name = $("#playerName").val();
 	socket.emit("playerconnection", {"name": name});
 }
 
+
+function newGame()
+{
+	socket.emit("newgame", name);
+}
+
 socket.on("playerupdate", function(data){
-	console.log(data);
+	console.log("Player update", data);
+	players = data ;
+});
+
+socket.on("newgamecreated", function(data){
+	console.log("New game", data);
 });
