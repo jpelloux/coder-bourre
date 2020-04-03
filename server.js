@@ -6,6 +6,7 @@ var socketIO = require('socket.io');
 var app = express();
 var server = http.Server(app);
 var gameRouter = require("./routes/game");
+var ftdRouter = require("./routes/fuckthedealer");
 
 var io = socketIO(server);
 
@@ -20,6 +21,7 @@ app.get('/', function(request, response) {
 });
 
 app.use("/game", gameRouter);
+app.use("/fuckthedealer", ftdRouter);
 
 // Starts the server.
 server.listen(5000, function() {
