@@ -2,8 +2,7 @@
 var express = require('express');
 var http = require('http');
 var path = require('path');
-var socketIO = require('socket.io');
-var port = 5000 ; 
+var port = 80 ; 
 var app = express();  
 var server = http.createServer(app);
 
