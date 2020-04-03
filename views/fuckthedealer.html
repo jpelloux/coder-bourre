@@ -1,15 +1,59 @@
 <html>
-  <head>
-    <title>Fuck ze dealer</title>
-    <style/>
-    </style>
-    <script src="/socket.io/socket.io.js"></script>
-  </head>
-  <body>
-	  <input type="text" id="playerName"/>
-	  <button onclick="playerConnection()">Connect</button>
-	  <button onclick="newGame()">Nouvelle partie</button>
-  </body>
-  <script src="/static/fuckthedealer.js"></script>
-  <script src="/static/jquery.min.js"></script>
+<head>
+	<title>Fuck ze dealer</title>
+	<style>
+		table
+		{
+			height: 200px;
+			border-collapse: collapse;
+			border: solid 1px black;
+			width: 100%;
+		}
+		table td
+		{
+			border: solid 1px red;
+		}
+		#game
+		{
+			display: none;
+		}
+		#dealer
+		{
+			display: none;
+		}
+		#card
+		{
+			width: 200px;
+			height: 300px;
+			border: solid 1px blue;
+		}
+	</style>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+	<div id="pregameLobby">
+		<input type="text" id="playerName"/>
+		<button onclick="playerConnection()">Connect</button>
+		<button onclick="newGame()">Nouvelle partie</button>
+	</div>
+	<div id="game">
+		<table>
+			<tr>
+				<td id="deux"></td>
+				<td id="trois"></td>
+				<td id="quatre"></td>
+				<td id="cinq"></td>
+			</tr>
+		</table>
+	</div>
+	<div id="dealer">
+		<div id="card"></div>
+		<button id="found" onclick="found()">Ce con a trouvé la carte</button>
+		<button id="notFound" onclick="notFound()">Ce con picole</button>
+	</div>
+	
+	
+</body>
+<script src="/static/fuckthedealer.js"></script>
+<script src="/static/jquery.min.js"></script>
 </html>

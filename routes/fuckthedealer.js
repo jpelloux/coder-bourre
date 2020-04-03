@@ -17,9 +17,11 @@ function main(io)
 			socket.broadcast.emit("playerupdate", Object.values(players));
 		});
 	
-		socket.on("newgame", function(name){
+		socket.on("newgame", function(name, callback){
 			console.log("new game from ", name);
 			socket.broadcast.emit("newgamecreated", {players: Object.values(players), dealer:name});
+			callback({players: Object.values(players), dealer:name});
+			
 		});
 
 		socket.on("disconnect", function () {
