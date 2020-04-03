@@ -11,9 +11,15 @@ table
 }
 table td
 {
-	border: solid 1px red;
+	border-left: 1px solid black;
+    border-right: 1px solid black;
 	text-align: center;
 	width: inherit;
+}
+table td img
+{
+	display: none;
+	width: 20px;
 }
 h1
 {
@@ -44,15 +50,14 @@ h1
 {
 	width: 200px;
 	height: 300px;
-	border: solid 1px blue;
+	border: hidden;
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
 }
-#cardText
+#cardImg
 {
-	text-align: center;
-	margin-top: 50%;
+	width: 200px;
 }
 .cardHeader
 {

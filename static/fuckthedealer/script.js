@@ -72,7 +72,7 @@ function onCardReceived(card)
 {
 	currentCard = card;
 	console.log("CARD GET : ", card);
-	$("#cardText").html(card[0] + " - " + card[1]);
+	$("#cardImg").attr("src", "/static/fuckthedealer/img/cartes/" + card[1].toLowerCase() + "-" + card[0]+ ".jpg");
 }
 
 function displayCardToEveryone()
@@ -86,8 +86,8 @@ socket.on("newdisplayedcard", displayCard);
 function displayCard(card)
 {
 	console.log("NEW DISPLAYED CARD", card);
-	var id = "#" + card[0]; 
-	$(id).html($(id).html() + "<br/>" + card[1]); 
+	var id = "#" + card[1].toLowerCase() + "-" + card[0];
+	$(id).show(); 
 }
 
 socket.on("dealerupdate", dealerUpdate);
