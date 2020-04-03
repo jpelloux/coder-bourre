@@ -2,7 +2,7 @@
 var express = require('express');
 var http = require('http');
 var path = require('path');
-var port = 80 ; 
+var port = 80; 
 var app = express();  
 var server = http.createServer(app);
 
@@ -24,7 +24,7 @@ app.use("/game", gameRouter);
 app.use("/fuckthedealer", ftdRouter(io));
 
 // Starts the server.
-server.listen(port, '0.0.0.0', function(){
+server.listen(port, function(){
 	console.log("Server started on port " + port);
 });
 
