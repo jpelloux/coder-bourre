@@ -10,7 +10,7 @@ console.log(socket.id);
 function playerConnection()
 {
 	name = $("#playerName").val();
-	socket.emit("playerconnection", {"name": name});
+	socket.emit("playerconnection", {"name": name}, addPlayers);
 }
 
 function startGame(data)
@@ -31,15 +31,21 @@ function startGame(data)
 	}
 }
 
+function addPlayers(names)
+{
+	var html = "";
+	players = names;
+	names.forEach(e => html += e + "<br>")
+
+	$("#playerList").html(html)
+}
+
 function newGame()
 {
 	socket.emit("newgame", name, startGame);
 }
 
-socket.on("playerupdate", function(data){
-	console.log("Player update", data);
-	players = data ;
-});
+socket.on("playerupdate", addPlayers);
 
 socket.on("newgamecreated", startGame);
 
@@ -53,6 +59,7 @@ function found()
 function notFound()
 {
 	displayCardToEveryone();
+	socket.emit("notfound", dealerUpdate)
 }
 //called the first time
 //maybe use the function found for a new card
@@ -81,4 +88,18 @@ function displayCard(card)
 	console.log("NEW DISPLAYED CARD", card);
 	var id = "#" + card[0]; 
 	$(id).html($(id).html() + "<br/>" + card[1]); 
+}
+
+socket.on("dealerupdate", dealerUpdate);
+
+function dealerUpdate(data){
+	if (data.notMe)
+	{
+		$("#dealer").hide(200);
+	}
+	else 
+	{
+		$("#dealer").show(200);
+		getCard();
+	}
 }

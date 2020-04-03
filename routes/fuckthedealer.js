@@ -25,13 +25,14 @@ function main(io)
 	io.on("connection", function(socket){
 		console.log("FTD connection handling", socket.id);
 
-		socket.on("playerconnection", function(data){
+		socket.on("playerconnection", function(data, callback){
 			console.log("Player connection : ", data.name);
 
 			players[socket.id] = data.name ; 
 			
 			console.log("List of player now : ", Object.values(players));
 			socket.broadcast.emit("playerupdate", Object.values(players));
+			callback(Object.values(players));
 		});
 		
 		socket.on("disconnect", function () {
@@ -53,6 +54,7 @@ function main(io)
 		});
 
 		socket.on("getcard", function(callback){
+			//TODO : Security : give card only if socket id is the one of the dealer
 			var c = getCard();
 			callback(c);
 		});
@@ -62,11 +64,27 @@ function main(io)
 			callback(currentCard);
 		});
 
-		socket.on("notfound", function(){
+		socket.on("notfound", function(callback){
 			errorCount++ ; 
 			if(errorCount >= 3)
 			{
+				errorCount = 0 ; 				
 				//TODO NEXT DEALER + NEXT PLAYER
+				callback({"notMe": true});
+				var ids = Object.keys(players);
+				var index = ids.indexOf(socket.id);
+				index++ ; 
+
+				if (index >= ids.length)
+				{
+					index = 0 ;
+				}
+				socket.to(ids[index]).emit("dealerupdate", {notMe: false});
+				
+			}
+			else
+			{
+				callback({"notMe" : false});
 			}
 			
 		});
@@ -82,8 +100,7 @@ function generateAllCards()
 {
 	console.log("Generating cards");
 	var symbol = ["PIQUE", "TREFLE", "COEUR", "CARREAU"];
-	var value = ["2", "3", "4", "5"];
-	// var value = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "V", "D", "R", "A"];
+	var value = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "V", "D", "R", "A"];
 	var ret = [];
 	value.forEach((v) => {
 		symbol.forEach(s => ret.push([v, s]));
