@@ -72,7 +72,7 @@ function onCardReceived(card)
 {
 	currentCard = card;
 	console.log("CARD GET : ", card);
-	$("#card").html(card[0] + " - " + card[1]);
+	$("#cardText").html(card[0] + " - " + card[1]);
 }
 
 function displayCardToEveryone()

@@ -8,18 +8,6 @@ var currentCard ;
 var errorCount;
 var removedCards = [];
 
-/**
- * "6":[false, false, false, false],
-	"7":[false, false, false, false],
-	"8":[false, false, false, false],
-	"9":[false, false, false, false],
-	"10":[false, false, false, false],
-	"V":[false, false, false, false],
-	"D":[false, false, false, false],
-	"R":[false, false, false, false],
-	"1":[false, false, false, false]
- */
-
 function main(io)
 {
 	io.on("connection", function(socket){
@@ -68,8 +56,7 @@ function main(io)
 			errorCount++ ; 
 			if(errorCount >= 3)
 			{
-				errorCount = 0 ; 				
-				//TODO NEXT DEALER + NEXT PLAYER
+				errorCount = 0 ;
 				callback({"notMe": true});
 				var ids = Object.keys(players);
 				var index = ids.indexOf(socket.id);

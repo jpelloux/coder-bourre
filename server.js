@@ -6,7 +6,6 @@ var socketIO = require('socket.io');
 var port = 5000 ; 
 var app = express();  
 var server = http.createServer(app);
-server.listen(port, '0.0.0.0');
 
 
 var io = require('socket.io').listen(server);
@@ -19,15 +18,15 @@ app.set('io', io)
 //static -> Fichier envoyés au navigateur (js client)
 app.use('/static', express.static(__dirname + '/static'));
 app.get('/', function(request, response) {
-  response.sendFile(path.join(__dirname, 'index.html'));
+	response.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use("/game", gameRouter);
 app.use("/fuckthedealer", ftdRouter(io));
 
 // Starts the server.
-server.listen(5000, function() {
-  console.log('Starting server on port 5000');
+server.listen(port, '0.0.0.0', function(){
+	console.log("Server started on port " + port);
 });
 
 // Add the WebSocket handlers

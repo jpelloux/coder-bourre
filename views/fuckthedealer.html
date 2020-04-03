@@ -1,39 +1,7 @@
 <html>
 <head>
 	<title>Fuck ze dealer</title>
-	<style>
-		body 
-		{
-			font-family: sans-serif;
-		}
-		table
-		{
-			height: 200px;
-			border-collapse: collapse;
-			border: solid 1px black;
-			width: 100%;
-		}
-		table td
-		{
-			border: solid 1px red;
-			text-align: center;
-			width: inherit;
-		}
-		#game
-		{
-			display: none;
-		}
-		#dealer
-		{
-			display: none;
-		}
-		#card
-		{
-			width: 200px;
-			height: 300px;
-			border: solid 1px blue;
-		}
-	</style>
+	<link href="/static/fuckthedealer/style.css" rel="stylesheet">
 <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -45,6 +13,21 @@
 	</div>
 	<div id="game">
 		<table>
+			<tr class="cardHeader">
+				<td>2</td>
+				<td>3</td>
+				<td>4</td>
+				<td>5</td>
+				<td>6</td>
+				<td>7</td>
+				<td>8</td>
+				<td>9</td>
+				<td>10</td>
+				<td>V</td>
+				<td>D</td>
+				<td>R</td>
+				<td>A</td>
+			</tr>
 			<tr>
 				<td id="2"></td>
 				<td id="3"></td>
@@ -63,13 +46,15 @@
 		</table>
 	</div>
 	<div id="dealer">
-		<div id="card"></div>
+		<div id="card">
+			<div id="cardText"></div>
+		</div>
 		<button id="found" onclick="found()">Ce con a trouvé la carte</button>
 		<button id="notFound" onclick="notFound()">Ce con picole</button>
 	</div>
 	
 	
 </body>
-<script src="/static/fuckthedealer.js"></script>
+<script src="/static/fuckthedealer/script.js"></script>
 <script src="/static/jquery.min.js"></script>
 </html>
