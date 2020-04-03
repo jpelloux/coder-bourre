@@ -3,6 +3,7 @@ var players = [];
 var dealer;
 var socket = io({transports: ['websocket'], upgrade: false});
 
+var currentCard; 
 console.log(socket.id);
 
 
@@ -34,3 +35,36 @@ socket.on("playerupdate", function(data){
 
 socket.on("newgamecreated", startGame);
 
+//game as dealer
+function found()
+{
+	displayCardToEveryone();
+	getCard();
+}
+
+function notFound()
+{
+	displayCardToEveryone();
+}
+//called the first time
+//maybe use the function found for a new card
+function getCard()
+{
+	socket.emit("getcard", onCardReceived);
+}
+
+function onCardReceived(card)
+{
+	currentCard = card;
+	console.log("CARD GET : ", card);
+}
+
+function displayCardToEveryone()
+{
+	socket.emit("displaycard");
+}
+
+//not dealer game
+socket.on("newdisplayedcard", function(card){
+	console.log("NEW DISPLAYED CARD", card);
+});
