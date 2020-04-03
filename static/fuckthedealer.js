@@ -20,7 +20,15 @@ function startGame(data)
 	dealer = data.dealer;
 	$("#pregameLobby").hide(200);
 	$("#game").show(200);
-	(dealer === name) ? $("#dealer").show(200) : $("#dealer").hide(200);
+	if (dealer === name)
+	{
+		$("#dealer").show(200);
+		getCard();
+	}
+	else
+	{
+		$("#dealer").hide(200);
+	}
 }
 
 function newGame()
@@ -57,14 +65,20 @@ function onCardReceived(card)
 {
 	currentCard = card;
 	console.log("CARD GET : ", card);
+	$("#card").html(card[0] + " - " + card[1]);
 }
 
 function displayCardToEveryone()
 {
-	socket.emit("displaycard");
+	socket.emit("displaycard", displayCard);
 }
 
 //not dealer game
-socket.on("newdisplayedcard", function(card){
+socket.on("newdisplayedcard", displayCard);
+
+function displayCard(card)
+{
 	console.log("NEW DISPLAYED CARD", card);
-});
+	var id = "#" + card[0]; 
+	$(id).html($(id).html() + "<br/>" + card[1]); 
+}

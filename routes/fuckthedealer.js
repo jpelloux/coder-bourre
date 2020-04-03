@@ -46,8 +46,7 @@ function main(io)
 			console.log("new game from ", name);
 			var data = {
 				players: Object.values(players),
-				dealer:name,
-				cards: cards				
+				dealer:name		
 			};
 			socket.broadcast.emit("newgamecreated", data);
 			callback(data);
@@ -58,8 +57,9 @@ function main(io)
 			callback(c);
 		});
 
-		socket.on("displaycard", function(){
+		socket.on("displaycard", function(callback){
 			socket.broadcast.emit("newdisplayedcard", currentCard);
+			callback(currentCard);
 		});
 
 		socket.on("notfound", function(){
