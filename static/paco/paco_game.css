@@ -1,0 +1,60 @@
+body {
+    background-color: chartreuse;
+    text-align: center;
+  }
+
+  #playersName{
+    text-align: left;
+  }
+
+  #dices{
+      font-size: 40px;
+  }
+  
+  #calls{
+    width: 100%;
+    border: 1px solid black;
+  }
+
+  #titles{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  } 
+
+  #othersCallsTitle{
+      width: 20%;
+      border-right: 1px solid black;
+  }
+
+  #myCallTitle{
+    flex:1;
+}
+
+  #announces{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  } 
+
+#othersCalls{
+    width: 20%;
+    border-right: 1px solid black;
+
+}
+
+  #myCall{
+    flex:1;
+    display: flex;
+    justify-content: center;
+    font-size: 40px;
+}
+
+  #numberBet{
+    padding-right: 20px;
+  }
+
+  #valueBet{
+    padding-left: 20px;
+
+  }

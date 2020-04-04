@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/paco/paco_game.css" />
+        <title>Paco</title>
+    </head>
+ 
+    <body>
+        
+        <h1>PACO GAME</h1>
+        <div>
+            <p id="playersName">Joueurs présents: </p>
+            <p><input type="button" id="getDices" value="Lancer les dés" /></p>
+            <p id="dices"></p>
+        </div>
+
+        <div id="whosTurn"></div>
+        <div id="calls">
+            <div id="titles">
+                <div id="othersCallsTitle">ANNONCES EN COURS</div>
+                <div id="myCallTitle">VOTRE ANNONCE</div>
+            </div>
+            <div id="announces">
+                <div id="othersCalls"></div>
+                <div id="myCall">
+                    <div id="numberBet"></div> <!-- values generated into js file -->
+                </div>
+            </div>
+        </div>
+
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="../../static/paco/paco_game.js"></script>
+    </body>
+</html>

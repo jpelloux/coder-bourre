@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/paco/paco_home.css" />
+        <title>Paco</title>
+    </head>
+ 
+    <body>
+
+        <h1>JOUONS AU PACO</h1>
+
+        <form method="get" id="formulary">
+            <label for="pseudo">Pseudo:
+                <input type="text" id="pseudo" name="pseudo" autofocus />
+            </label>
+            <input type="submit" id='playing_request' value="Rejoindre la partie" />
+            
+        </form>
+
+        <a href="/paco/game"><input type="button" disabled="true" id="game_starter" value="Démarrer le jeu"/></a>
+
+        <section id="text_area"></section>
+
+        
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="/static/paco/paco_home.js"></script>
+    </body>
+</html>
