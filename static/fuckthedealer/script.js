@@ -4,7 +4,7 @@ var dealer;
 var socket = io({transports: ['websocket'], upgrade: false});
 
 var currentCard; 
-console.log(socket.id);
+var htmlDealerToken = "<br/><span class='dealerToken'>DEALER</span>";
 
 
 function playerConnection()
@@ -19,6 +19,7 @@ function startGame(data)
 	players = data.players;
 	dealer = data.dealer;
 	$("#pregameLobby").hide(200);
+	addPlayersInGame(players);
 	$("#game").show(200);
 	if (dealer === name)
 	{
@@ -38,6 +39,20 @@ function addPlayers(names)
 	names.forEach(e => html += "<li>" + e + "</li>");
 
 	$("#playerList > ul").html(html)
+}
+
+function addPlayersInGame(names)
+{
+	var html = ""
+	players.forEach(function(e){
+		html += "<td id='"+e+"'>" + e ;
+		if(e === dealer)
+		{
+			html += htmlDealerToken; ;
+		}
+		html += "</td>"
+	});
+	$("#gamePlayerList").html(html);
 }
 
 function newGame()
@@ -93,13 +108,27 @@ function displayCard(card)
 socket.on("dealerupdate", dealerUpdate);
 
 function dealerUpdate(data){
-	if (data.notMe)
+	
+	if (data.name !== dealer)
 	{
-		$("#dealer").hide(200);
+		changeDealerToken(data.name, dealer);
+		dealer = data.name;
 	}
-	else 
+	if (data.name === name)
 	{
 		$("#dealer").show(200);
 		getCard();
 	}
+	else 
+	{
+		$("#dealer").hide(200);
+	}
+}
+
+function changeDealerToken(newDealer, oldDealer)
+{
+	var oldDealerHtml = $("#" + oldDealer).html();
+	$("#" + oldDealer).html(oldDealerHtml.substring(0, oldDealerHtml.length - htmlDealerToken.length + 1));
+	var newDealerHtml = $("#" + newDealer).html() + htmlDealerToken;
+	$("#" + newDealer).html(newDealerHtml);
 }

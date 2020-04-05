@@ -56,7 +56,6 @@ function main(io)
 			if(errorCount >= 3)
 			{
 				errorCount = 0 ;
-				callback({"notMe": true});
 				var ids = Object.keys(players);
 				var index = ids.indexOf(socket.id);
 				index++ ; 
@@ -65,20 +64,22 @@ function main(io)
 				{
 					index = 0 ;
 				}
-				socket.to(ids[index]).emit("dealerupdate", {notMe: false});
-				
+				var ret = {"name":players[ids[index]]}
+				socket.broadcast.emit("dealerupdate", ret);				
+				callback(ret);
 			}
 			else
 			{
-				callback({"notMe" : false});
+				callback({"name" : players[socket.id]});
 			}
 			
 		});
 
-		router.get('/', function (req, res, next) {
-			res.sendFile("fuckthedealer.html",  {root:'./views'});
-		});
 	});
+	router.get('/', function (req, res, next) {
+		res.sendFile("fuckthedealer.html",  {root:'./views'});
+	});
+
 	return router;
 }
 
