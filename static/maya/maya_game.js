@@ -3,7 +3,8 @@ var pseudo = sessionStorage.getItem('pseudo');
 
 var turn = {
 	"activePlayer": "",
-	"nextActivePlayer": ""
+	"nextActivePlayer": "",
+	"dices" : []
 }
 if (pseudo) {
 	socket.emit('reachGame', pseudo, addPlayer);
@@ -18,7 +19,7 @@ $("#choose_call").submit(function(event) {
   	];
   	event.preventDefault();
   	diceCall(choosen_dice);
-  	customHide("#your_call");
+  	
   	$('#dice1').val("");
 	$('#dice2').val("");
 });
@@ -28,6 +29,17 @@ $("#button_lie").click(function() {
 $("#button_take").click(function() {
   takeOrLie(true);
 });
+$("#button_copy").click(function() {
+  diceCall(turn.dices);
+});
+$("#button_maya").click(function() {
+  diceCall([2,1]);
+});
+$("#button_51").click(function() {
+  socket.emit('51');
+});
+
+
 
 socket.on("dispPlayersNames", function(playerNames){
     console.log(playerNames);
@@ -38,7 +50,9 @@ socket.on("dispPlayersNames", function(playerNames){
 
 socket.on('dices', function(dices){
 	console.log(dices);
+	turn.dices = dices;
 	displayDicesOnElement("#dices", dices);
+	displaySpecialAction(dices);
 });
 
 socket.on("dispPlayersNames", function(playerNames){
@@ -69,6 +83,10 @@ socket.on("lied", function(result){
     displayLied(result);
 });
 
+socket.on("51", function(){
+    display51();
+});
+
 function addPlayer(playerNames) {
     console.log(playerNames);
     $("#players_tables").html("<tr></tr>");
@@ -93,8 +111,8 @@ function startTurn(turnInfos) {
 		customHide("#your_turn");
 	}
 }
-function coloration(comp, currentName) {
-	if (currentName	== pseudo) {
+function coloration(comp, currentName, force) {
+	if (currentName	== pseudo || force) {
 		console.log("itsYou");
 		$(comp).addClass("you");
 	}  else {
@@ -103,6 +121,7 @@ function coloration(comp, currentName) {
 	}
 }
 function diceCall(choosen_dice) {
+	customHide("#your_call");
 	socket.emit('diceCall', choosen_dice);
 }
 
@@ -194,4 +213,18 @@ function isDouble(dices) {
 }
 function is51(dices) {
 	return (dices[0] == 5 && dices[1] == 1) || (dices[0] == 1 && dices[1] == 5);
+}
+function displaySpecialAction(dices) {
+	if (is51(dices)) {
+		customShow("#button_51");
+		customHide("#choose_call");
+		customHide("#specialAction");
+	} else {
+		customHide("#button_51");
+		customShow("#specialAction");
+	}
+}
+function display51() {
+	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + " : 51 ! Tout le monde boit</td></tr>");
+	coloration('#sip_table tr:last', null, true);
 }

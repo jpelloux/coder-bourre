@@ -70,6 +70,10 @@ function main(io_){
         	io.to("maya_game").emit("takeOrLieResult", choice);
             takeOrLieResolver(socket, choice);
         });
+        socket.on('51', function(choice){
+        	io.to("maya_game").emit("51", choice);
+        	startTurn(socket);
+        });
     })
 
     router.get('/home', function(req, res){  
