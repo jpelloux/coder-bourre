@@ -67,6 +67,7 @@ function main(io_){
             getNextPlayerChoice(socket);
         });
         socket.on('takeOrLie', function(choice){
+        	io.to("maya_game").emit("takeOrLieResult", choice);
             takeOrLieResolver(socket, choice);
         });
     })
@@ -172,9 +173,11 @@ function takeOrLieResolver(socket, choice) {
 		startTurn(socket);
 	} else { //next player say lier
 		if (!isSameDices()) { //player lied
+			lied(true);
 			playerDrink();
 			startTurn(socket);
 		} else { //player didn't lied
+			lied(false);
 			nextPlayerDrink();
 			changeTurn();
 			startTurn(socket);
@@ -229,7 +232,11 @@ function compare(x, y) {
 }
 
 function isDouble(dices) {
-	return dices[0] == dices[1]
+	return dices[0] == dices[1];
+}
+
+function is51(dices) {
+	return (dices[0] == 5 && dices[1] == 1) || (dices[0] == 1 && dices[1] == 5);
 }
 
 function isMaya(dices) {
@@ -254,6 +261,9 @@ function sipCalculator(dices, coef) {
 		"sip": sip,
 		"bottomUp": bottomUp
 	}
+}
+function lied(result) {
+	io.to("maya_game").emit("lied", result);
 }
 /*
 - Lancer les dés

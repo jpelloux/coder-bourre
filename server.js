@@ -5,13 +5,13 @@ var path = require('path');
 var port = 80; 
 var app = express();  
 var server = http.createServer(app);
-var mayaRouter = require("./routes/maya");
 
 
 var io = require('socket.io').listen(server);
 
 var gameRouter = require("./routes/game");
 var ftdRouter = require("./routes/fuckthedealer");
+var mayaRouter = require("./routes/maya");
 //share socket.io between app
 app.set('io', io)
 

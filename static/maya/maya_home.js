@@ -16,7 +16,7 @@ socket.on("newPlayer", function(m){
     $('#text_area').append('<p>' + m + ' a demandé à rejoindre la partie</p>');
 })
 socket.on("removePlayer", function(m){
-    $('#text_area').append('<p>' + m + ' a quitter partie</p>');
+    $('#text_area').append('<p>' + m + ' a quitté la partie</p>');
 })
 
 socket.on("canDispGame", function(m){

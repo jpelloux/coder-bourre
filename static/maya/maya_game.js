@@ -1,6 +1,10 @@
 var socket = io();
 var pseudo = sessionStorage.getItem('pseudo');
 
+var turn = {
+	"activePlayer": "",
+	"nextActivePlayer": ""
+}
 if (pseudo) {
 	socket.emit('reachGame', pseudo, addPlayer);
 } else {
@@ -47,14 +51,22 @@ socket.on("startTurn", function(turnInfos){
 
 socket.on("diceCalled", function(dices){
     displayDicesOnElement("#dicesCalled", dices);
+    displayDicesOnChat(dices);
 });
 
-socket.on("takeOrLie", function(dices){
+socket.on("takeOrLie", function(){
     customShow("#takeOrLie");
+});
+socket.on("takeOrLieResult", function(choice) {
+	displayTakeOrlieOnChat(choice);
 });
 
 socket.on("drinks", function(drinks){
     displayDrinks(drinks);
+});
+
+socket.on("lied", function(result){
+    displayLied(result);
 });
 
 function addPlayer(playerNames) {
@@ -68,6 +80,8 @@ function addPlayer(playerNames) {
 function startTurn(turnInfos) {
 	clearComp("#dicesCalled");
 	customHide("#takeOrLie");
+	turn.activePlayer = turnInfos.activPlayer;
+	turn.nextActivePlayer = turnInfos.nextActivePlayer;
 	$('#active_player_name').html(turnInfos.activPlayer);
 	coloration("#active_player_name", turnInfos.activPlayer)
 	$('#next_active_player_name').html(turnInfos.nextActivePlayer);
@@ -104,8 +118,18 @@ function customShow(comp) {
 
 function displayDicesOnElement(comp, dices) {
 	clearComp(comp);
+	var special = "";
+	if (isMaya(dices)) {
+		special ="-red";
+	}
+	if (is51(dices)) {
+		special ="-yellow";
+	}
+	if (isDouble(dices)) {
+		special ="-blue";
+	}
 	dices.forEach(dice => {
-        $(comp).append('<img id="dices_img" src=\"/static/img/dices/dice-' + dice + '.png\">' + '\t');
+        $(comp).append('<img id="dices_img" src=\"/static/img/dices/dice-' + dice + special + '.png\">' + '\t');
     });
 }
 function takeOrLie(choice) {
@@ -135,4 +159,39 @@ function displayDrinks(drinks) {
 }
 function clearComp(comp) {
 	$(comp).html("");
+}
+function displayDicesOnChat(dices) {
+	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + " annonce " + dices[0] + dices[1] + "</td></tr>");
+	coloration('#sip_table tr:last', turn.activePlayer);
+}
+function displayTakeOrlieOnChat(choice) {
+	var str;
+	if (choice) {
+		str = " prend.";
+	} else {
+		str = " : MENTEUR !";
+	}
+	$('#sip_table tr:last').after("<tr><td>" + turn.nextActivePlayer + str + "</td></tr>");
+	coloration('#sip_table tr:last', turn.nextActivePlayer);
+}
+function displayLied(result) {
+	var str;
+	if (result) {
+		str = " a menti";
+	} else {
+		str = " n'a pas menti";
+	}
+	
+	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + str + "</td></tr>");
+	coloration('#sip_table tr:last', turn.activePlayer);
+}
+
+function isMaya(dices) {
+	return (dices[0] == 2 && dices[1] == 1) || (dices[0] == 1 && dices[1] == 2);
+}
+function isDouble(dices) {
+	return dices[0] == dices[1];
+}
+function is51(dices) {
+	return (dices[0] == 5 && dices[1] == 1) || (dices[0] == 1 && dices[1] == 5);
 }
