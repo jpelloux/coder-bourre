@@ -28,3 +28,28 @@ body {
   flex-direction: row;
 } 
 
+#sip_table {
+  cellspacing: 0,
+  cellpadding:1,
+  border: 0,
+  width: 300px
+}
+#title_txt {
+  font-size:30px;
+  width: 40%;
+  display: inline-block;
+}
+
+#title_container
+{
+    text-align:center;
+}
+#active_player_name,
+#next_active_player_name {
+  display: inline-block;
+  vertical-align: middle;
+  width:  150px;
+}
+.you {
+  color: chartreuse;
+}

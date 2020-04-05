@@ -7,12 +7,40 @@
     <body>
         
         <h1>MAYA</h1>
-        <h2></h2><h2 id="active_player_name"></h2>
-        <h2></h2><h2 id="next_active_player_name"></h2>
 
-        <div>
-            <p><input type="button" id="getDices" value="Lancer les dés" /></p>
+        <div style="width:320px; height:80px; overflow:auto;">
+            <table id="sip_table">
+                <tr>
+                    <td>Bienvenue dans cette partie !</td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="title_container">
+            <div id="title_txt">Joueur : <div id="active_player_name"></div></div>
+            <div id="title_txt">Suivant : <div id="next_active_player_name"></div></div>
+        </div>
+
+        <h2>Annonce :</h2>
+        <div id="dicesCalled">
+
+        </div>
+
+        <div id="takeOrLie">
+            <button id=button_take>Je prend</button><button id=button_lie>Menteur !</button>
+        </div>
+
+        <div id="your_turn">
+            <p> Vos dés : <p>
             <p id="dices"></p>
+            <div id="your_call">
+                <p> Votre annonce<p>
+                <form id="choose_call" name="form" method="post" action="some">
+                    <input type="number" id="dice1" name="dice1" min="1" max="6">
+                    <input type="number" id="dice2" name="dice2" min="1" max="6">
+                    <input type="submit">
+                </form>
+            </div>
         </div>
 
         <script src="/socket.io/socket.io.js"></script>

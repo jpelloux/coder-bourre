@@ -10,11 +10,13 @@ var gameInfos = {
 
 var turnInfo = {
 	"player": 0,
-	"nextPlayer": 1
+	"nextPlayer": 1,
+	"realDices": [],
+	"choosenDices": []
 };
 
-function main(io){
-
+function main(io_){
+	io = io_;
     io.on('connection', function(socket) {
 		socket.on("disconnect", function () {
 			if(gameInfos.players[socket.id]) {
@@ -22,7 +24,7 @@ function main(io){
 				socket.broadcast.emit('removePlayer', gameInfos.players[socket.id]);
 				delete gameInfos.players[socket.id];
 				gameInfos.nbPlayers--;
-				displayPlayerNames(socket);
+				displayPlayerNames();
 			}
 		});
 
@@ -39,6 +41,7 @@ function main(io){
         	if(pseudo) {
         		console.log(pseudo + " reach game");
         		addPlayer(socket, pseudo, callback);
+        		socket.join("maya_game");
         		if (gameInfos.nbPlayers > 1) {
         			console.log("more than 1 player");
         			startGame(socket, callback);
@@ -56,6 +59,15 @@ function main(io){
         socket.on('newTurn', function(data, callback){
         	console.log("newTurn");
             startTurn(socket, callback);
+        });
+
+        socket.on('diceCall', function(choosenDices){
+        	turnInfo.choosenDices = choosenDices
+            io.to("maya_game").emit("diceCalled", choosenDices);
+            getNextPlayerChoice(socket);
+        });
+        socket.on('takeOrLie', function(choice){
+            takeOrLieResolver(socket, choice);
         });
     })
 
@@ -84,13 +96,10 @@ function goToGame(socket, callback) {
 	}
 }
 
-function displayPlayerNames(socket, callback) {
+function displayPlayerNames() {
 	if (gameInfos.players) {
 		console.log('displayPlayerNames : ' + Object.values(gameInfos.players));
-		socket.broadcast.emit('dispPlayersNames', Object.values(gameInfos.players));
-		if (callback) {
-			callback(Object.values(gameInfos.players));
-		}
+		io.to("maya_game").emit("dispPlayersNames", Object.values(gameInfos.players));
 	}
 }
 
@@ -101,27 +110,33 @@ function addPlayer(socket, pseudo, callback) {
 
 	console.log(gameInfos.nbPlayers + ' players : ' + Object.values(gameInfos.players));
 	socket.broadcast.emit('newPlayer', pseudo);
-	displayPlayerNames(socket, callback);
+	displayPlayerNames();
 }
 
 function changeTurn() {
-	var playerIndex = turnInfo.players;
-	if (playerIndex >= Object.keys(gameInfos.players)) {
+	console.log(turnInfo);
+	console.log(gameInfos);
+	console.log(Object.keys(gameInfos.players).length);
+
+	var playerIndex = turnInfo.player + 1;
+	if (playerIndex >= Object.keys(gameInfos.players).length) {
 		playerIndex = 0 ;
 	}
-	turnInfo.players = playerIndex;
-	var nextPlayerIndex = turnInfo.nextPlayer;
-	if (nextPlayerIndex >= Object.keys(gameInfos.players)) {
+	turnInfo.player = playerIndex;
+	var nextPlayerIndex = turnInfo.nextPlayer + 1;
+	if (nextPlayerIndex >= Object.keys(gameInfos.players).length) {
 		nextPlayerIndex = 0 ;
 	}
 	turnInfo.nextPlayer = nextPlayerIndex;
+	console.log(turnInfo);
 }
 
-function startGame(socket, callback) {
+function startGame(socket, callback, io) {
 	var socketsIds = Object.keys(gameInfos.players);
 	console.log("turnInfo players " + turnInfo.player);
 	console.log("socket startGame : " + socketsIds[turnInfo.player]);
-	socket.to(socketsIds[turnInfo.players]).emit("startGame", null);
+	startTurn(socket);
+	//socket.to(socketsIds[turnInfo.players]).emit("startGame", null);
 }
 function startTurn(socket, callback) {
 	console.log("Start turn");
@@ -130,11 +145,115 @@ function startTurn(socket, callback) {
 		"activPlayer": gameInfos.players[socketsIds[turnInfo.player]],
 		"nextActivePlayer": gameInfos.players[socketsIds[turnInfo.nextPlayer]],
 	}
-	socket.broadcast.emit('startTurn', turn);
-	if (callback) {
-		callback(turn);
+	io.to("maya_game").emit("startTurn", turn);
+	turnInfo.realDices = getDices(2)
+	if (socketsIds[turnInfo.player] == socket.id) {
+		console.log("activPlayer == socket");
+		socket.emit("dices", turnInfo.realDices);
+	} else {
+		console.log("activPlayer =/= socket");
+		io.to(socketsIds[turnInfo.player]).emit('dices', turnInfo.realDices);
 	}
-	socket.to(socketsIds[turnInfo.players]).emit("dices", getDices(2));
+}
+function getNextPlayerChoice(socket) {
+	var socketsIds = Object.keys(gameInfos.players);
+	if (socketsIds[turnInfo.nextPlayer] == socket.id) {
+		console.log("nextPlayer == socket");
+		socket.emit("takeOrLie");
+	} else {
+		console.log("nextPlayer =/= socket");
+		io.to(socketsIds[turnInfo.nextPlayer]).emit('takeOrLie');
+	}
+}
+
+function takeOrLieResolver(socket, choice) {
+	if (choice) { //next player take it
+		changeTurn();
+		startTurn(socket);
+	} else { //next player say lier
+		if (!isSameDices()) { //player lied
+			playerDrink();
+			startTurn(socket);
+		} else { //player didn't lied
+			nextPlayerDrink();
+			changeTurn();
+			startTurn(socket);
+		}
+	}
+}
+function playerDrink() {
+	
+	var socketsIds = Object.keys(gameInfos.players);
+	var sips = sipCalculator(turnInfo.choosenDices);
+	drinks = [{
+		"player": gameInfos.players[socketsIds[turnInfo.player]],
+		"sip": sips["sip"],
+		"bottomUp": sips["bottomUp"]
+	}];
+	sendDrinks(drinks);
+}
+function nextPlayerDrink() {
+	var socketsIds = Object.keys(gameInfos.players);
+	var sips = sipCalculator(turnInfo.choosenDices, 2);
+	drinks = [{
+		"player": gameInfos.players[socketsIds[turnInfo.nextPlayer]],
+		"sip": sips["sip"],
+		"bottomUp": sips["bottomUp"]
+	}];
+	sendDrinks(drinks);
+}
+function allDrink() {
+	//TODO 51
+	sendDrinks(drinks);
+}
+function sendDrinks(drinks) {
+	io.to("maya_game").emit("drinks", drinks);
+}
+function isSameDices() {
+	turnInfo.realDices.sort(compare);
+	turnInfo.choosenDices.sort(compare);
+	if(turnInfo.realDices.length != turnInfo.choosenDices.length) {
+		return false; 
+	} else { 
+   		for(var i = 0; i < turnInfo.realDices.length; i++) {
+   			if(turnInfo.realDices[i] != turnInfo.choosenDices[i]) {
+   				return false; 
+   			}
+   		}
+    	return true; 
+  	} 
+}
+
+function compare(x, y) {
+    return y - x;
+}
+
+function isDouble(dices) {
+	return dices[0] == dices[1]
+}
+
+function isMaya(dices) {
+	return (dices[0] == 2 && dices[1] == 1) || (dices[0] == 1 && dices[1] == 2);
+}
+
+function sipCalculator(dices, coef) {
+	var sip = 0;
+	var bottomUp = 0;
+	if (isMaya(dices)) {
+		bottomUp++;
+	} else if (isDouble(dices)) {
+		sip = dices[0];
+	} else {
+		sip++;
+	}
+	if (coef) {
+		sip = sip*coef;
+		bottomUp = bottomUp*coef;
+	}
+	return {
+		"sip": sip,
+		"bottomUp": bottomUp
+	}
 }
 /*
 - Lancer les dés
@@ -143,6 +262,10 @@ function startTurn(socket, callback) {
 - Résolution et gorgé
 -- Si tu mensonge joueur relance retour 1
 -- Sinon suivant joue retour 1
+
+
+-- MAYA
+-- 51
 
 socket.to(socketsIds[turnInfo.nextPlayer]).emit("nextActivePlayer");
 */
