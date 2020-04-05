@@ -2,32 +2,32 @@
 var express = require('express');
 var http = require('http');
 var path = require('path');
-var socketIO = require('socket.io');
-var app = express();
-var server = http.Server(app);
-var gameRouter = require("./routes/game");
-var ftdRouter = require("./routes/fuckthedealer");
+var port = 80; 
+var app = express();  
+var server = http.createServer(app);
 var mayaRouter = require("./routes/maya");
 
-var io = socketIO(server);
 
-app.set('port', 5000);
+var io = require('socket.io').listen(server);
+
+var gameRouter = require("./routes/game");
+var ftdRouter = require("./routes/fuckthedealer");
 //share socket.io between app
 app.set('io', io)
 
 //static -> Fichier envoyés au navigateur (js client)
 app.use('/static', express.static(__dirname + '/static'));
 app.get('/', function(request, response) {
-  response.sendFile(path.join(__dirname, 'index.html'));
+	response.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use("/game", gameRouter);
-app.use("/fuckthedealer", ftdRouter);
+app.use("/fuckthedealer", ftdRouter(io));
 app.use("/maya", mayaRouter(io));
 
 // Starts the server.
-server.listen(5000, function() {
-  console.log('Starting server on port 5000');
+server.listen(port, function(){
+	console.log("Server started on port " + port);
 });
 
 // Add the WebSocket handlers
