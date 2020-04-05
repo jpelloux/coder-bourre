@@ -1,0 +1,30 @@
+body {
+  background-color: white;
+  text-align: center;
+}
+
+#player_pict{
+  width: 50px;
+}
+#playersName{
+  text-align: left;
+}
+
+#dices{
+  font-size: 40px;
+}
+
+#dices_img{
+  width: 50px;
+}
+#calls{
+  width: 100%;
+  border: 1px solid black;
+}
+
+#titles{
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+} 
+
