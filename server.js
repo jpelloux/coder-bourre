@@ -8,6 +8,10 @@ var server = http.createServer(app);
 
 var io = require('socket.io').listen(server);
 
+var gameRouter = require("./routes/game");
+var ftdRouter = require("./routes/fuckthedealer");
+var mayaRouter = require("./routes/maya");
+
 //share socket.io between app
 app.set('io', io)
 
