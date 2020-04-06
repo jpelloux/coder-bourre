@@ -1,6 +1,9 @@
 var express = require('express');
 var router = express.Router();
 var players = {};
+var dealerIndex; 
+var nextDealerIndex; 
+var nextPlayerIndex; 
 
 var cards = [];
 var currentCard ; 
@@ -31,34 +34,50 @@ function main(io)
 			cards = generateAllCards();
 			var playersName = Object.values(players);
 			errorCount = 0;
-			var dealer; 
-			if (clientData.dealerChoice === "player")
-			{
-				dealer = players[socket.id];
+			if (clientData.dealerChoice === "player") {
+				dealerIndex = Object.keys(players).indexOf(socket.id);
 			}
-			else
-			{
-				var randDealerIdx = Math.floor(Math.random() * Math.floor(playersName.length))
-				dealer = playersName[randDealerIdx];
+			else {
+				dealerIndex = Math.floor(Math.random() * playersName.length)
 			}
-			console.log("new game from ", data);
+			nextPlayerIndex = (dealerIndex + 1) % playersName.length;
+			nextDealerIndex = dealerIndex;
 			var data = {
 				players: playersName,
-				dealer:dealer		
+				dealer:playersName[dealerIndex],
+				nextPlayer:playersName[nextPlayerIndex]
 			};
+			console.log("New game : " + JSON.stringify(data));
 			socket.broadcast.emit("newgamecreated", data);
 			callback(data);
 		});
 
 		socket.on("getcard", function(callback){
-			//TODO : Security : give card only if socket id is the one of the dealer
-			var c = getCard();
-			callback(c);
+			//Only the dealer can get card
+			// if (Object.keys(players).indexOf(socket.id) === dealerIndex)
+			// {
+				nextDealerIndex = (nextDealerIndex + 1) % Object.keys(players).length;
+				
+				var c = getCard();
+				callback(c);
+			// }
 		});
 
 		socket.on("displaycard", function(callback){
-			socket.broadcast.emit("newdisplayedcard", currentCard);
-			callback(currentCard);
+			var playersName = Object.values(players);
+			nextPlayerIndex = (nextPlayerIndex + 1) % playersName.length;
+			// console.log("displaycard",nextPlayerIndex, nextDealerIndex);
+			if (nextPlayerIndex === dealerIndex)
+			{
+				nextPlayerIndex = (nextPlayerIndex + 1) % playersName.length;
+			}
+
+			var data = {
+				card: currentCard,
+				nextPlayer: playersName[nextPlayerIndex]
+			}
+			socket.broadcast.emit("newdisplayedcard", data);
+			callback(data);
 		});
 
 		socket.on("notfound", function(callback){
@@ -67,14 +86,11 @@ function main(io)
 			{
 				errorCount = 0 ;
 				var ids = Object.keys(players);
-				var index = ids.indexOf(socket.id);
-				index++ ; 
-
-				if (index >= ids.length)
-				{
-					index = 0 ;
-				}
-				var ret = {"name":players[ids[index]]}
+				console.log(dealerIndex, nextDealerIndex, nextPlayerIndex);
+				dealerIndex = nextDealerIndex;
+				nextDealerIndex = (nextDealerIndex + 1) % ids.length;
+				var ret = {"name":players[ids[dealerIndex]]};
+				console.log("Dealer update", ret);
 				socket.broadcast.emit("dealerupdate", ret);				
 				callback(ret);
 			}

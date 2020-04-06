@@ -4,8 +4,8 @@ var dealer;
 var socket = io({transports: ['websocket'], upgrade: false});
 
 var currentCard; 
-var htmlDealerToken = "<br/><span class='dealerToken'>DEALER</span>";
-
+var htmlDealerToken = "<div id='dealerToken' class='dealerToken'><br/>DEALER</div>";
+var htmlPlayerToken = "<div id='playerToken' class='dealerToken'><br/>JOUEUR</div>"
 
 function playerConnection()
 {
@@ -20,8 +20,10 @@ function startGame(data)
 	console.log("New game", data);
 	players = data.players;
 	dealer = data.dealer;
+	var nextPlayer = data.nextPlayer;
+
 	$("#pregameLobby").hide(200);
-	addPlayersInGame(players);
+	addPlayersInGame(players, nextPlayer);
 	$("#game").show(200);
 	if (dealer === name)
 	{
@@ -43,14 +45,18 @@ function addPlayers(names)
 	$("#playerList > ul").html(html)
 }
 
-function addPlayersInGame(names)
+function addPlayersInGame(names, nextPlayer)
 {
-	var html = ""
+	var html = "";
 	players.forEach(function(e){
 		html += "<td id='"+e+"'>" + e ;
 		if(e === dealer)
 		{
 			html += htmlDealerToken; ;
+		}
+		else if (e === nextPlayer)
+		{
+			html += htmlPlayerToken;
 		}
 		html += "</td>"
 	});
@@ -101,11 +107,13 @@ function displayCardToEveryone()
 //not dealer game
 socket.on("newdisplayedcard", displayCard);
 
-function displayCard(card)
+function displayCard(data)
 {
+	var card = data.card;
 	console.log("NEW DISPLAYED CARD", card);
 	var id = "#" + card[1].toLowerCase() + "-" + card[0];
 	$(id).show(); 
+	changePlayerToken(data.nextPlayer);
 }
 
 socket.on("dealerupdate", dealerUpdate);
@@ -114,7 +122,7 @@ function dealerUpdate(data){
 	
 	if (data.name !== dealer)
 	{
-		changeDealerToken(data.name, dealer);
+		changeDealerToken(data.name);
 		dealer = data.name;
 	}
 	if (data.name === name)
@@ -128,10 +136,14 @@ function dealerUpdate(data){
 	}
 }
 
-function changeDealerToken(newDealer, oldDealer)
+function changeDealerToken(newDealer)
 {
-	var oldDealerHtml = $("#" + oldDealer).html();
-	$("#" + oldDealer).html(oldDealerHtml.substring(0, oldDealerHtml.length - htmlDealerToken.length + 1));
-	var newDealerHtml = $("#" + newDealer).html() + htmlDealerToken;
-	$("#" + newDealer).html(newDealerHtml);
+	$("#dealerToken").remove();
+	$("#" + newDealer).append(htmlDealerToken);
+}
+
+function changePlayerToken(name)
+{
+	$("#playerToken").remove();
+	$("#" + name).append(htmlPlayerToken)
 }
