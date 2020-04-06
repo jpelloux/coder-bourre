@@ -27,14 +27,24 @@ function main(io)
 			delete players[socket.id];
 		});
 	
-		socket.on("newgame", function(name, callback){
+		socket.on("newgame", function(clientData, callback){
 			cards = generateAllCards();
+			var playersName = Object.values(players);
 			errorCount = 0;
-			
-			console.log("new game from ", name);
+			var dealer; 
+			if (clientData.dealerChoice === "player")
+			{
+				dealer = players[socket.id];
+			}
+			else
+			{
+				var randDealerIdx = Math.floor(Math.random() * Math.floor(playersName.length))
+				dealer = playersName[randDealerIdx];
+			}
+			console.log("new game from ", data);
 			var data = {
-				players: Object.values(players),
-				dealer:name		
+				players: playersName,
+				dealer:dealer		
 			};
 			socket.broadcast.emit("newgamecreated", data);
 			callback(data);

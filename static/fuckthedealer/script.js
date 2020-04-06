@@ -10,6 +10,8 @@ var htmlDealerToken = "<br/><span class='dealerToken'>DEALER</span>";
 function playerConnection()
 {
 	name = $("#playerName").val();
+	$("#newGameButton").prop("disabled", false);
+	$("#connectionButton").html("Actualiser");
 	socket.emit("playerconnection", {"name": name}, addPlayers);
 }
 
@@ -57,7 +59,8 @@ function addPlayersInGame(names)
 
 function newGame()
 {
-	socket.emit("newgame", name, startGame);
+	var dealerChoice = $("input[name='dealerChoice']:checked").val();
+	socket.emit("newgame", {dealerChoice: dealerChoice}, startGame);
 }
 
 socket.on("playerupdate", addPlayers);

@@ -11,13 +11,24 @@
 		<input type="text" id="playerName" name="playerName"/>
 		<br/>
 		<br/>
-		<button onclick="playerConnection()">Rejoindre</button>
+		<button id="connectionButton" onclick="playerConnection()">Rejoindre</button>
 		<br/>
 		<h2>Joueurs en attente</h2>
 		<div id="playerList">
 			<ul></ul>
 		</div>
-		<button onclick="newGame()">Lancer la partie</button>
+		<p>Qui est le dealer ?</p>
+		<div>
+			<input type="radio" id="radioBtnMe" name="dealerChoice" value="player" checked>
+			<label for="radioBtnMe">Moi</label>
+		  </div>
+		  
+		  <div>
+			<input type="radio" id="radioBtnRandom" name="dealerChoice" value="random">
+			<label for="radioBtnRandom">Aléatoire</label>
+		  </div>
+		  <br/>
+		<button id="newGameButton" onclick="newGame()" disabled=true>Lancer la partie</button>
 	</div>
 	<div id="game">
 		<table class=" gamePlayerList">
