@@ -1,0 +1,61 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/maya/maya_game.css" />
+        <title>Maya</title>
+    </head>
+    <body>
+        
+        <h1>MAYA</h1>
+
+        <div style="width:320px; height:80px; overflow:auto;">
+            <table id="sip_table">
+                <tr>
+                    <td>Bienvenue dans cette partie !</td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="title_container">
+            <div id="title_txt">Joueur : <div id="active_player_name"></div></div>
+            <div id="title_txt">Suivant : <div id="next_active_player_name"></div></div>
+        </div>
+
+        <h2>Annonce :</h2>
+        <div id="dicesCalled">
+
+        </div>
+
+        <div id="takeOrLie">
+            <button id=button_take>Je prend</button><button id=button_lie>Menteur !</button>
+        </div>
+
+        <div id="your_turn">
+            <p> Vos dés : <p>
+            <p id="dices"></p>
+            <div id="your_call">
+                <p> Votre annonce<p>
+                <form id="choose_call" name="form" method="post" action="some">
+                    <input type="number" id="dice1" name="dice1" min="1" max="6">
+                    <input type="number" id="dice2" name="dice2" min="1" max="6">
+                    <input type="submit">
+                </form>
+                <button id=button_51>51 tout le monde boit</button>
+                <div id="specialAction">
+                    <button id=button_maya>Maya</button><button id=button_copy>La vérité</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="../../static/maya/maya_game.js"></script>
+
+        <div id="players">
+            <table id="players_tables">
+                <tr>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>

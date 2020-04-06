@@ -6,11 +6,8 @@ var port = 80;
 var app = express();  
 var server = http.createServer(app);
 
-
 var io = require('socket.io').listen(server);
 
-var gameRouter = require("./routes/game");
-var ftdRouter = require("./routes/fuckthedealer");
 //share socket.io between app
 app.set('io', io)
 
@@ -21,6 +18,7 @@ app.get('/', function(request, response) {
 });
 
 app.use("/game", gameRouter);
+app.use("/maya", mayaRouter(io));
 app.use("/fuckthedealer", ftdRouter(io));
 
 // Starts the server.
