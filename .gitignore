@@ -2,3 +2,7 @@
 node_modules/
 
 package-lock.json
+
+bots/discord_key
+
+bots/*.mp3
