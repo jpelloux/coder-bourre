@@ -1,0 +1,50 @@
+html {
+  background: Ivory;
+}
+h1 {
+    text-align: center;
+}
+
+fieldset {
+  border: 1px solid black;
+  border-top: 20px solid IndianRed;
+  border-bottom: 10px solid IndianRed;
+  background: white;
+  margin: auto;
+}
+
+fieldset legend {
+  text-transform: capitalize;
+  font-variant: small-caps;
+  background: IndianRed;
+  color: Ivory;
+  position: relative;
+  top: -9px;
+  left: 0px;
+  padding: 5px 20px;
+  font-size: 24px;
+  border-radius: 8px 8px 0 0;
+}
+
+fieldset.game {
+  margin-top: 50px;
+  width: 60%;
+}
+
+.logo {
+  width: 30px;
+}
+
+a:visited,
+a:link {
+  color: black;
+  text-transform: capitalize;
+  font-variant: small-caps;
+  font-size: 24px;
+  text-decoration: none;
+}
+
+.comingSoon {
+  color: DarkGray !important;
+  font-style: italic !important;
+}

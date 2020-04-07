@@ -1,11 +1,28 @@
 <html>
   <head>
     <title>Coder bourré</title>
-    
+    <link href="/static/index.css" rel="stylesheet">
   </head>
   <body>
 	  <h1>Salut les connards</h1>
-	  <a href="./game">Game</a>
-	  <a href="./fuckthedealer">Fuck the dealer</a>
+
+	  <fieldset class="game"> 
+	  	<legend>Jeux de cartes <img src="/static/img/utils/card_logo.png" class="logo"></legend>
+		<a href="./fuckthedealer"><img src="/static/img/utils/spade_logo.png" class="logo">Fuck the dealer</a>
+	  </fieldset>
+
+	  <fieldset class="game"> 
+	  	<legend>Jeux de dés <img src="/static/img/utils/dice_logo.png" class="logo"></legend>
+		<a href="./maya/home"><img src="/static/img/utils/dice_1_logo.png" class="logo"> Maya</a>
+		<br>
+		<a href="./maya/home" class="comingSoon"><img src="/static/img/utils/dice_2_logo.png" class="logo"> Paco (a venir)</a>
+	  </fieldset>
+
+	  <fieldset class="game"> 
+	  	<legend>Autres <img src="/static/img/utils/random_logo.png" class="logo"></legend>
+	  	<a href="./game"><img src="/static/img/utils/random_logo.png" class="logo"> Game</a>
+	  </fieldset>
+
+	  
   </body>
 </html>
