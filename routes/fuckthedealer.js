@@ -1,11 +1,14 @@
 var express = require('express');
 var router = express.Router();
 var players = {};
-
+var dealerIndex; 
+var nextPlayerIndex; 
+var playersCount;
 var cards = [];
 var currentCard ; 
 var errorCount;
-var removedCards = [];
+var isNextDealerChoiceIsNextPlayer;
+var removedCards;
 
 function main(io)
 {
@@ -27,52 +30,77 @@ function main(io)
 			delete players[socket.id];
 		});
 	
-		socket.on("newgame", function(name, callback){
+		socket.on("newgame", function(clientData, callback){
 			cards = generateAllCards();
+			removedCards = [];
+			var playersName = Object.values(players);
+			var ids = Object.keys(players);
+			playersCount = playersName.length ; 
 			errorCount = 0;
-			
-			console.log("new game from ", name);
+			if (clientData.dealerChoice === "player") {
+				dealerIndex = ids.indexOf(socket.id);
+			}
+			else {
+				dealerIndex = Math.floor(Math.random() * playersCount)
+			}
+			isNextDealerChoiceIsNextPlayer = clientData.nextDealerChoice === "nextPlayer" ;
+			nextPlayerIndex = (dealerIndex + 1) % playersCount;
 			var data = {
-				players: Object.values(players),
-				dealer:name		
+				players: playersName,
+				dealer:playersName[dealerIndex],
+				nextPlayer:playersName[nextPlayerIndex]
 			};
-			socket.broadcast.emit("newgamecreated", data);
-			callback(data);
-		});
-
-		socket.on("getcard", function(callback){
-			//TODO : Security : give card only if socket id is the one of the dealer
+			console.log("New game : " + JSON.stringify(data));
+			io.emit("newgamecreated", data);
 			var c = getCard();
-			callback(c);
+			io.to(ids[dealerIndex]).emit("cardreceive", c)
+			
 		});
 
-		socket.on("displaycard", function(callback){
-			socket.broadcast.emit("newdisplayedcard", currentCard);
-			callback(currentCard);
-		});
-
-		socket.on("notfound", function(callback){
-			errorCount++ ; 
-			if(errorCount >= 3)
+		//Update from dealer when clicking on found/notFound
+		socket.on("clientupdate", function(data, callback){
+			var ret = {
+				newDisplayedCard: null,
+				isLastCardFromFamily: null,
+				dealer: null,
+				nextDealer: null,
+				nextPlayer: null
+			}
+			var ids = Object.keys(players);
+			var names = Object.values(players);
+			if (data.found)
 			{
-				errorCount = 0 ;
-				var ids = Object.keys(players);
-				var index = ids.indexOf(socket.id);
-				index++ ; 
-
-				if (index >= ids.length)
-				{
-					index = 0 ;
-				}
-				var ret = {"name":players[ids[index]]}
-				socket.broadcast.emit("dealerupdate", ret);				
-				callback(ret);
+				errorCount = 0;				
 			}
 			else
 			{
-				callback({"name" : players[socket.id]});
+				errorCount++ ; 
+				if(errorCount >= 3)
+				{
+					errorCount = 0 ;
+					if (isNextDealerChoiceIsNextPlayer)
+					{
+						dealerIndex = (dealerIndex + 1) % playersCount;
+					}
+					else
+					{
+						dealerIndex = nextPlayerIndex;
+					}
+				}
 			}
+			nextPlayerIndex = (nextPlayerIndex + 1) % playersCount;
+			if (nextPlayerIndex === dealerIndex)
+			{
+				nextPlayerIndex = (nextPlayerIndex + 1) % playersCount;
+			}
+			ret.isLastCardFromFamily = isLastCardFromFamilyRemoved(currentCard);
+			ret.newDisplayedCard = currentCard; 
+			ret.dealer = names[dealerIndex] ;
+			ret.nextPlayer = names[nextPlayerIndex];
+			io.emit("serverupdate", ret);
 			
+			var c = getCard();
+			io.to(ids[dealerIndex]).emit("cardreceive", c);	
 		});
 
 	});
@@ -81,6 +109,15 @@ function main(io)
 	});
 
 	return router;
+}
+
+function isLastCardFromFamilyRemoved(card)
+{	
+	//temporary solution in order to not crash when no card left
+	if (card)
+	{
+		return removedCards.filter(e => e[0] === card[0]).length === 4;
+	}
 }
 
 function generateAllCards()
@@ -99,9 +136,8 @@ function generateAllCards()
 function getCard()
 {
 	let r = Math.floor(Math.random() * Math.floor(cards.length));
-	let card = cards[r];
-	cards.splice(r, 1);
-	removedCards.push(cards);
+	let card = cards.splice(r, 1)[0];
+	removedCards.push(card);
 	currentCard = card;
 	return card;
 }
