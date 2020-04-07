@@ -8,6 +8,13 @@ var currentCard;
 var htmlDealerToken = "<div id='dealerToken' class='dealerToken'><br/>DEALER</div>";
 var htmlPlayerToken = "<div id='playerToken' class='dealerToken'><br/>JOUEUR</div>"
 
+var colorLogoHtml = {
+	"CARREAU": "<img src='/static/fuckthedealer/img/cartes/carreau.png'></img>",
+	"TREFLE": "<img src='/static/fuckthedealer/img/cartes/trefle.png'></img>",
+	"PIQUE": "<img src='/static/fuckthedealer/img/cartes/pique.png'></img>",
+	"COEUR": "<img src='/static/fuckthedealer/img/cartes/coeur.png'></img>",
+}
+
 function playerConnection()
 {
 	name = $("#playerName").val();
@@ -92,14 +99,18 @@ function onServerUpdate(data)
 {
 	changePlayerToken(data.nextPlayer);
 	changeDealerToken(data.dealer);
-	displayCard(data.newDisplayedCard);
+	displayCard(data.newDisplayedCard, data.isLastCardFromFamily);
 }
 
-function displayCard(card)
+function displayCard(card, isLastCardFromFamily)
 {
-	console.log("NEW DISPLAYED CARD", card);
-	var id = "#" + card[1].toLowerCase() + "-" + card[0];
-	$(id).show(); 
+	var id = "#" + card[1] + "-" + card[0];
+	$(id).append(colorLogoHtml[card[1]]);
+
+	if(isLastCardFromFamily)
+	{
+		$("td[id$='-"+ card[0] +"']").css("background-color", "#bfbfbf");
+	}
 }
 
 function changeDealerToken(newDealer)
