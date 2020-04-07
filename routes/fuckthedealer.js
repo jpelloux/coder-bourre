@@ -2,14 +2,13 @@ var express = require('express');
 var router = express.Router();
 var players = {};
 var dealerIndex; 
-var nextDealerIndex; 
 var nextPlayerIndex; 
 var playersCount;
 var cards = [];
 var currentCard ; 
 var errorCount;
 var isNextDealerChoiceIsNextPlayer;
-var removedCards = [];
+var removedCards;
 
 function main(io)
 {
@@ -33,6 +32,7 @@ function main(io)
 	
 		socket.on("newgame", function(clientData, callback){
 			cards = generateAllCards();
+			removedCards = [];
 			var playersName = Object.values(players);
 			var ids = Object.keys(players);
 			playersCount = playersName.length ; 
@@ -93,13 +93,14 @@ function main(io)
 			{
 				nextPlayerIndex = (nextPlayerIndex + 1) % playersCount;
 			}
+			ret.isLastCardFromFamily = isLastCardFromFamilyRemoved(currentCard);
 			ret.newDisplayedCard = currentCard; 
 			ret.dealer = names[dealerIndex] ;
 			ret.nextPlayer = names[nextPlayerIndex];
 			io.emit("serverupdate", ret);
 			
 			var c = getCard();
-			io.to(ids[dealerIndex]).emit("cardreceive", c);		
+			io.to(ids[dealerIndex]).emit("cardreceive", c);	
 		});
 
 	});
@@ -108,6 +109,15 @@ function main(io)
 	});
 
 	return router;
+}
+
+function isLastCardFromFamilyRemoved(card)
+{	
+	//temporary solution in order to not crash when no card left
+	if (card)
+	{
+		return removedCards.filter(e => e[0] === card[0]).length === 4;
+	}
 }
 
 function generateAllCards()
@@ -126,9 +136,8 @@ function generateAllCards()
 function getCard()
 {
 	let r = Math.floor(Math.random() * Math.floor(cards.length));
-	let card = cards[r];
-	cards.splice(r, 1);
-	removedCards.push(cards);
+	let card = cards.splice(r, 1)[0];
+	removedCards.push(card);
 	currentCard = card;
 	return card;
 }
