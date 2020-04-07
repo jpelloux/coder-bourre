@@ -17,15 +17,24 @@
 		<div id="playerList">
 			<ul></ul>
 		</div>
-		<p>Qui est le dealer ?</p>
+		<p>Qui commence dealer ?</p>
 		<div>
 			<input type="radio" id="radioBtnMe" name="dealerChoice" value="player" checked>
 			<label for="radioBtnMe">Moi</label>
 		  </div>
-		  
 		  <div>
 			<input type="radio" id="radioBtnRandom" name="dealerChoice" value="random">
 			<label for="radioBtnRandom">Aléatoire</label>
+		  </div>
+		  <br/>
+		<p>Qui devient dealer après trois erreurs ?</p>
+		<div>
+			<input type="radio" id="radioBtnMe" name="nextDealerChoice" value="nextPlayer">
+			<label for="radioBtnMe">Le joueur à droite du dealer</label>
+		  </div>
+		  <div>
+			<input type="radio" id="radioBtnRandom" name="nextDealerChoice" value="playerThatFailed" checked>
+			<label for="radioBtnRandom">Le joueur qui fait la troisième erreur d'affilée</label>
 		  </div>
 		  <br/>
 		<button id="newGameButton" onclick="newGame()" disabled=true>Lancer la partie</button>
