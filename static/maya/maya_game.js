@@ -1,13 +1,21 @@
 var socket = io();
+
 var pseudo = sessionStorage.getItem('pseudo');
+var roomName = sessionStorage.getItem('roomName');
 
 var turn = {
 	"activePlayer": "",
 	"nextActivePlayer": "",
 	"dices" : []
 }
-if (pseudo) {
-	socket.emit('reachGame', pseudo, addPlayer);
+
+if (pseudo && roomName) {
+	var data = {
+        "pseudo" : pseudo, 
+        "roomName" : roomName
+    };
+	socket.emit('reachGame', data, addPlayer);
+	$("#lobbyName").html("Salon : " + roomName);
 } else {
 	$(window).attr('location','/maya/home');
 }
@@ -228,3 +236,5 @@ function display51() {
 	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + " : 51 ! Tout le monde boit</td></tr>");
 	coloration('#sip_table tr:last', null, true);
 }
+
+/*****   UTILS  ****/
