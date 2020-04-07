@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/drinkingWar/drinkingWar_game.css" />
+        <title>Drinking War</title>
+    </head>
+    <body>
+        
+        <h1>Drinking War</h1>
+
+        <div id="waitingScreen">
+            <fieldset class="waitingScreen_fieldset">
+                <legend>Salon <span id="lobbyName"></span> : en attente d'autres joueurs</legend>
+                <div class="loader"></div>
+            </fieldset>
+        </div>
+
+        <div id="game">
+            <fieldset class="information_fieldset">
+                <legend>Informations</legend>
+                <div id="informations_table">
+                    <table id="sip_table">
+                        <tr>
+                            <td>Bienvenue dans cette partie !</td>
+                        </tr>
+                     </table>
+                </div>
+            </fieldset>
+            <fieldset class="game_fieldset">
+                <legend>Salon <span id="lobbyName_2"></span> : partie en cours</legend>       
+            </fieldset>
+        </div>
+
+        <fieldset class="players_fieldset">
+            <legend>Joueurs connectés</legend>
+            <div id="players">
+                <table id="players_tables">
+                    <tr>
+                    </tr>
+                </table>
+            </div>
+        </fieldset>
+        
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="../../static/drinkingWar/drinkingWar_game.js"></script>   
+    </body>
+</html>
