@@ -1,15 +1,17 @@
 body {
     background-color: chartreuse;
+  }
+  
+  #content{
     text-align: center;
+    display: none;
   }
-
-  #playersName{
-    text-align: left;
+  #dices_area{
+    height: 100px;
   }
-
-  #dices{
+  /*#dices{
       font-size: 40px;
-  }
+  }*/
   
   #calls{
     width: 100%;

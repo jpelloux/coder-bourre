@@ -10,27 +10,43 @@ var gameInfos = {
 };
 
 function main(io){
+    const nsp = io.of('/game');
 
-    io.on('connection', function(socket) {
 
-        socket.on('playRequest', function(m){
-            gameInfos.players.push(m)
-            socket.broadcast.emit('newPlayer', m);
-            if (gameInfos.players.length > 1){
-                io.sockets.emit('canDispGame', '');
+    io.on('connection', function(socket) { 
+        // prevent user to choose an unavaiable pseudo
+        socket.on("playingRequest", function(pseudo, fn){
+            fn(gameInfos.players.includes(pseudo));
+        })
+    })
+
+    nsp.on('connection', function(socket) { 
+        /**
+         * Répondre à la socket :                           socket.emit('', '');
+         * Répondre à tout le monde sauf l'emetteur :       ?
+         * Répondre à tout le monde :                       nsp.emit('', '');
+         * Répondre à tout le monde même hors namespace :   io.emit('');
+         */
+        
+        // store informations when a new player reach the game, then broadcast the info
+        socket.on('gameReached', function(player, fn){
+            if(!gameInfos.players.includes(player)){ // manage users who press f5 during game (shitty way)
+                gameInfos.players.push(player);
             }
+            nsp.emit('updatePlayersList', gameInfos.players);
+            fn(gameInfos.players);
         });
 
-        socket.on('reachGame', function(m){
-            socket.emit('dispPlayersNames', gameInfos.players);
+        socket.on('startGame_req', function(player, fn){
+            nsp.emit('startGame_res', '');
         });
-    
+
         socket.on('getDices', function(m){
             socket.emit('getDices', getDices(5));
             gameInfos.nbReadyPlayers++;
             if (gameInfos.nbReadyPlayers == gameInfos.players.length){
                 gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
-                io.sockets.emit('startGame', gameInfos.players[gameInfos.turn]);
+                nsp.emit('startGame', gameInfos.players[gameInfos.turn]);
             }
         });
     
@@ -39,7 +55,7 @@ function main(io){
             gameInfos.turn %= gameInfos.players.length;
             var call = m[1] + '_' + m[2]
             var disp = m[0] + ' annonce ' + m[1] + ' ' + m[2];
-            io.sockets.emit('callMade', {"toDisp": disp, "call": call, "player":gameInfos.players[gameInfos.turn]});
+            nsp.emit('callMade', {"toDisp": disp, "call": call, "player":gameInfos.players[gameInfos.turn]});
         });
     })
 

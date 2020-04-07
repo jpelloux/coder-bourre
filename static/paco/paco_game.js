@@ -1,24 +1,45 @@
-var socket = io();
+var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
 
-
 var maxCallDisplayed = 10;
 
-socket.emit('reachGame', '');
 
 
-
-
-$('#getDices').click(function(){
-    socket.emit('getDices', '');
-    $('#getDices').prop('disabled', true);
+// disp players list when I reach the game room
+socket.emit("gameReached", pseudo, function(players){
+    dispPlayersNames(players);
 });
 
-socket.on("dispPlayersNames", function(m){
-    m.forEach(el => {
-        $('#playersName').append(el + ', ');
+// update players list when a new player reach the game room
+socket.on("updatePlayersList", function(players){
+    dispPlayersNames(players)
+});
+
+function dispPlayersNames(namesTab){
+    var str = "";
+    namesTab.forEach(el => {
+        str += el + ', '
     });
+    str = str.substring(0, str.length - 2);
+    document.getElementById('playersName').innerHTML= "Joueurs présents: " + str;
+}
+
+$('#start_button').click(function(){
+    socket.emit("startGame_req", '');
+});
+
+socket.on("startGame_res", function(){
+    document.getElementById('start_button').style.display = "contents";
+    document.getElementById('content').style.display = "contents";
+});
+
+
+
+
+$('#getDices_button').click(function(){
+    socket.emit('getDices', '');
+    $('#getDices_button').prop('disabled', true);
 });
 
 socket.on('getDices', function(m){
