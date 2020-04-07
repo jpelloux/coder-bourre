@@ -75,7 +75,7 @@ function main(io_){
 
     return router;
 }
-/*****   UTILS ****/
+/*****   ROOMS ****/
 function joinRoom(socket, roomName) {
 	if (playerRooms[socket.id]) {
 		socket.leave(getRoom(socket));
@@ -125,6 +125,9 @@ function addPlayer(socket, data, callback) {
 	gameInfos[getRoom(socket)].nbPlayers++;
 	customLog(gameInfos[getRoom(socket)].nbPlayers + ' players : ' + Object.values(gameInfos[getRoom(socket)].players));
 	displayPlayerNames(socket);
+	if (gameInfos[getRoom(socket)].nbPlayers = 2) {
+		startTurn(socket);
+	}
 }
 function displayPlayerNames(socket) {
 	customLog("----------------------------------------------------" + getRoom(socket));
@@ -289,9 +292,10 @@ function sipCalculator(dices, coef) {
 	}
 }
 function lied(socket, result) {
-	sendToRoom(socket, "lied", results);
+	sendToRoom(socket, "lied", result);
 }
 
+/*** UTILS ***/
 function customLog(msg) {
 	if (enableLog) {
 		console.log(msg);
