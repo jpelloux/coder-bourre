@@ -1,5 +1,7 @@
 var socket = io();
+
 var pseudo = sessionStorage.getItem('pseudo');
+
 
 var maxCallDisplayed = 10;
 
@@ -14,7 +16,6 @@ $('#getDices').click(function(){
 });
 
 socket.on("dispPlayersNames", function(m){
-    console.log(m);
     m.forEach(el => {
         $('#playersName').append(el + ', ');
     });
@@ -41,8 +42,23 @@ socket.on('callMade', function(m){
 
 function roundManager(player, call){
     document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
+    dispButtons(player);
     dispPossibleCalls(player, call);
 
+}
+
+function dispButtons(player){
+    if(player != pseudo){
+        document.getElementById('buttons').innerHTML = '';
+        return;
+    }
+    var values = '<p>';
+    values += '<button id="menteurButton" onClick="callButtonPressed(this.id)">MENTEUR !</button>';
+    values += '<p></p>';
+    values += '<button id="toutpileButton" onClick="callButtonPressed(this.id)">TOUT PILE</button>';
+    values += '</p>';
+
+    document.getElementById('buttons').innerHTML = values;
 }
 
 /* 
@@ -57,9 +73,8 @@ function dispPossibleCalls(player, call){
     }
     var numberCalled = call=='' ? 0 : parseInt(call.split('_')[0]);
     var valueCalled = call=='' ? 0 : parseInt(call.split('_')[1]);
-
-    var values = '';
-    
+ 
+    var values = "";
     for (var i=1; i<=6; i++){
         values += '<p>'
         for (var j=1; j<=maxCallDisplayed; j++){
@@ -96,6 +111,9 @@ function dispPossibleCalls(player, call){
 }
 
 
-function reply_click(clicked_id){
-    socket.emit('callMade', [pseudo, clicked_id.toString().split("_")[2], clicked_id.toString().split("_")[1]]);
+function reply_click(id){
+    socket.emit('callMade', [pseudo, id.toString().split("_")[2], id.toString().split("_")[1]]);
+}
+
+function callButtonPressed(id){
 }
