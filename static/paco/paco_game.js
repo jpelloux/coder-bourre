@@ -26,15 +26,15 @@ function dispPlayersNames(namesTab){
         str += el + ', '
     });
     str = str.substring(0, str.length - 2);
-    document.getElementById('playersName').innerHTML= "Joueurs présents: " + str;
+    document.getElementById('playersName').innerHTML= pseudo + "<br>Joueurs présents: " + str;
 }
 
 // Displays and starts the game when someone press the starter button
 $('#start_button').click(function(){
-    socket.emit("startGame_req", '');
+    socket.emit('dispGame_req', '');
 });
 
-socket.on("startGame_res", function(){
+socket.on("dispGame_res", function(){
     document.getElementById('start_button').style.display = "contents";
     document.getElementById('content').style.display = "contents";
 });
@@ -50,18 +50,15 @@ socket.on("startGame_res", function(){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE PHASE OF GETTING DICES  *
 ***************************************************************************/
 
+// Asks and receives the values of dices from the server, and displays the right images 
 $('#getDices_button').click(function(){
-    socket.emit('getDices_req', '');
+    socket.emit('getDices_req', function(dices){
+        dices.forEach(val => {
+            $('#dices').append('<img src=\"/static/images/dice_' + val + '.png\">' + '\t');
+        });
+    });
     $('#getDices_button').prop('disabled', true);
 });
-
-// Receives the values of dices from the server and displays the right images 
-socket.on('getDices_res', function(m){
-    m.forEach(el => {
-        $('#dices').append('<img src=\"/static/images/dice_' + el + '.png\">' + '\t');
-    });
-});
-
 
 
 
@@ -73,8 +70,14 @@ socket.on('getDices_res', function(m){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE CALLING SYSTEM (HEART OF THE GAME)  *
 ***************************************************************************************/
 
-socket.on('startGame_res', function(player){
-    roundManager(player, '')
+socket.on('startGame', function(player){
+    document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
+    if(player!=pseudo){
+        document.getElementById('numberBet').innerHTML = '';
+    }
+    else{
+        dispPossibleCalls('');
+    }
 });
 
 /**
@@ -88,22 +91,22 @@ socket.on('startGame_res', function(player){
 socket.on('callMade_res', function(data){
     $('#othersCalls').append('<p>' + data.lastPlayer + ' annonce ' + data.numberCalled + ' ' + data.valueCalled + '</p>');
     var call = data.numberCalled + '_' + data.valueCalled;
-    dispEndersButtons(data.lastPlayer, data.nextPlayer, call);
-    roundManager(data.nextPlayer, call);
+    document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ data.nextPlayer.toUpperCase();
+
+    if(data.nextPlayer!=pseudo){
+        document.getElementById('numberBet').innerHTML = '';
+        document.getElementById('enders_buttons').innerHTML = '';
+    }
+    else{
+        dispPossibleCalls(call);
+        dispEndersButtons(data.lastPlayer, call);
+    }
 });
 
-function roundManager(player, call){
-    document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
-    dispPossibleCalls(player, call);
-}
 
 // Generates the html code that allows to make a call
 // "call" is in the form "X_Y"
-function dispPossibleCalls(player, call){
-    if(player != pseudo){
-        document.getElementById('numberBet').innerHTML = '';
-        return;
-    }
+function dispPossibleCalls(call){
     var numberCalled = call=='' ? 0 : parseInt(call.split('_')[0]);
     var valueCalled = call=='' ? 0 : parseInt(call.split('_')[1]);
  
@@ -158,11 +161,7 @@ function valuePressed(id){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE PRESSURE ON AN ENDER BUTTON (MENTEUR & TOUTPILE)  *
 *****************************************************************************************************/
 
-function dispEndersButtons(lastPlayer, player, call){
-    if(player != pseudo){
-        document.getElementById('enders_buttons').innerHTML = '';
-        return;
-    }
+function dispEndersButtons(lastPlayer, call){
     var values = '<p>';
     values += '<button id="menteurButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">MENTEUR !</button>';
     values += '<p></p>';

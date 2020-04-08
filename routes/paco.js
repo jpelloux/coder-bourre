@@ -4,50 +4,61 @@ var router = express.Router();
 var io = null;
 
 var gameInfos = {
-    "players": [],
-    "nbReadyPlayers": 0,
-    "turn": 0,
+    "players": [], // pseudos of the differents players
+    "nbReadyPlayers": 0, // increment each time someone get his dices, start game when =players.length
+    "turn": 0, // used to tell to clients that it's the turn of players[turn]
     "dices": [0, 0, 0, 0, 0, 0] // total of each dice value during a round
 };
 
 function main(io){
-    const nsp = io.of('/game');
+    const nsp_home = io.of('/home');
+    const nsp_game = io.of('/game');
 
 
-    io.on('connection', function(socket) { 
+    nsp_home.on('connection', function(socket) { 
+        /**
+         * Répondre à la socket :                           socket.emit('', '');
+         * Répondre à tout le monde sauf l'emetteur :       ?
+         * Répondre à tout le monde :                       nsp_game.emit('', '');
+         * Répondre à tout le monde même hors namespace :   io.emit('');
+         */
+
         // prevent user to choose an unavaiable pseudo
         socket.on("playingRequest", function(pseudo, fn){
             fn(gameInfos.players.includes(pseudo));
         })
     })
 
-    nsp.on('connection', function(socket) { 
+
+
+
+    nsp_game.on('connection', function(socket) { 
         /**
          * Répondre à la socket :                           socket.emit('', '');
          * Répondre à tout le monde sauf l'emetteur :       ?
-         * Répondre à tout le monde :                       nsp.emit('', '');
+         * Répondre à tout le monde :                       nsp_game.emit('', '');
          * Répondre à tout le monde même hors namespace :   io.emit('');
          */
         
         // store informations when a new player reach the game, then broadcast the info
         socket.on('gameReached', function(player, fn){
-            if(!gameInfos.players.includes(player)){ // manage users who press f5 during game (shitty way)
+            if(!gameInfos.players.includes(player)){ // manage users who press f5 during game (shitty way tot do that)
                 gameInfos.players.push(player);
             }
-            nsp.emit('updatePlayersList', gameInfos.players);
+            nsp_game.emit('updatePlayersList', gameInfos.players);
             fn(gameInfos.players);
         });
 
-        socket.on('startGame_req', function(player, fn){
-            nsp.emit('startGame_res', '');
+        socket.on('dispGame_req', function(){
+            nsp_game.emit('dispGame_res', '');
         });
 
-        socket.on('getDices_req', function(m){
-            socket.emit('getDices_res', getDices(5));
+        socket.on('getDices_req', function(fn){
+            fn(getDices(5));
             gameInfos.nbReadyPlayers++;
             if (gameInfos.nbReadyPlayers == gameInfos.players.length){
                 gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
-                nsp.emit('startGame_res', gameInfos.players[gameInfos.turn]);
+                nsp_game.emit('startGame', gameInfos.players[gameInfos.turn]);
             }
         });
 
@@ -60,7 +71,7 @@ function main(io){
         socket.on('callMade_req', function(call){
             gameInfos.turn += 1;
             gameInfos.turn %= gameInfos.players.length;
-            nsp.emit('callMade_res', {  "lastPlayer": call.pseudo,
+            nsp_game.emit('callMade_res', {  "lastPlayer": call.pseudo,
                                         "nextPlayer": gameInfos.players[gameInfos.turn], 
                                         "numberCalled": call.numberCalled, 
                                         "valueCalled":call.valueCalled });
@@ -90,7 +101,7 @@ function main(io){
                 throw "id of enderButton is not recognized";
             }
 
-            nsp.emit('endRound_res', {
+            nsp_game.emit('endRound_res', {
                 "endingPlayer":data.pseudo,
                 "enderType": data.enderType,
                 "hasWin": hasWin, 
@@ -116,29 +127,10 @@ function getDices(nbDices){
     var values = [];
         for (var j=0; j<nbDices; j++){
             var dice = Math.floor(Math.random() * Math.floor(6)) + 1;
-            /*switch(dice){
-                case 1: gameInfos.dices.one++;break;
-                case 2: gameInfos.dices.two++;break;
-                case 3: gameInfos.dices.three++;break;
-                case 4: gameInfos.dices.four++;break;
-                case 5: gameInfos.dices.five++;break;
-                case 6: gameInfos.dices.six++;break;
-            }*/
             gameInfos.dices[dice-1]++;
             values.push(dice);
         }
     return values;
-}
-
-function getNbDice(value){
-    switch(value){
-        case 1: return gameInfos.dices.one;
-        case 2: return gameInfos.dices.two;
-        case 3: return gameInfos.dices.three;
-        case 4: return gameInfos.dices.four;
-        case 5: return gameInfos.dices.five;
-        case 6: return gameInfos.dices.six;
-    }
 }
 
 module.exports = main;

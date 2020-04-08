@@ -1,4 +1,4 @@
-var socket = io();
+var socket = io('/home');
 
 $('#form').submit(function(){
     var pseudo = $('#pseudo').val();
