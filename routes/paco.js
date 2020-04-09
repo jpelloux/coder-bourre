@@ -50,14 +50,14 @@ function main(io){
         });
 
         socket.on('dispGame_req', function(){
+            gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
             nsp_game.emit('dispGame_res', '');
         });
 
-        socket.on('getDices_req', function(fn){
-            fn(getDices(5));
+        socket.on('getDices_req', function(nbDice, fn){
+            fn(getDices(nbDice));
             gameInfos.nbReadyPlayers++;
             if (gameInfos.nbReadyPlayers == gameInfos.players.length){
-                gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
                 nsp_game.emit('startGame', gameInfos.players[gameInfos.turn]);
             }
         });
@@ -108,6 +108,11 @@ function main(io){
                 "pseudo": pseudo, 
                 "dices": gameInfos.dices
             });
+
+            gameInfos.nbReadyPlayers=0;
+            gameInfos.turn=gameInfos.players.indexOf(pseudo);
+            gameInfos.dices=[0, 0, 0, 0, 0, 0];
+
         });
 
 

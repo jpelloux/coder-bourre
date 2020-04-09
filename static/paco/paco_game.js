@@ -1,8 +1,8 @@
 var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
+var nbDice = 5;
 
-var maxCallDisplayed = 10;
 
 
 
@@ -52,10 +52,12 @@ socket.on("dispGame_res", function(){
 
 // Asks and receives the values of dices from the server, and displays the right images 
 $('#getDices_button').click(function(){
-    socket.emit('getDices_req', function(dices){
+    socket.emit('getDices_req', nbDice, function(dices){
+        var str = "";
         dices.forEach(val => {
-            $('#dices').append('<img src=\"/static/images/dice_' + val + '.png\">' + '\t');
+            str += '<img src=\"/static/images/dice_' + val + '.png\">'
         });
+        document.getElementById('dices').innerHTML = str;
     });
     $('#getDices_button').prop('disabled', true);
 });
@@ -72,6 +74,7 @@ $('#getDices_button').click(function(){
 
 socket.on('startGame', function(player){
     document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
+    document.getElementById('othersCalls').innerHTML = '';
     if(player!=pseudo){
         document.getElementById('numberBet').innerHTML = '';
     }
@@ -113,7 +116,7 @@ function dispPossibleCalls(call){
     var values = "";
     for (var i=1; i<=6; i++){
         values += '<p>'
-        for (var j=1; j<=maxCallDisplayed; j++){
+        for (var j=1; j<=15; j++){
             if(call == '') 
             {// case of the first call of the round
                 if(i!=1){ // we cannot start with a call on pacos
@@ -187,12 +190,24 @@ function enderButtonPressed(enderType, lastCall, lastPlayer){
  *      - "dices": an array containing the actual number of each dice (total of all hands)
 */
 socket.on('endRound_res',function(data){
-    
+
+    if(pseudo == data.pseudo){
+        updateNbDices(data.hasWin);
+    }
+    dispEndGame(data);
+    $('#getDices_button').prop('disabled', false);
+});
+
+
+// description of "data" is with the socket listening to 'endRound_res'
+function dispEndGame(data){
+    document.getElementById('whosTurn').innerHTML = 'FIN DE LA MANCHE, RELANCEZ VOS DÉS !';
+
     //display who ended the game and how
     var enderType = data.enderType=="menteurButton" ? "menteur !" : "tout pile !";
     $('#othersCalls').append('<p>' + data.endingPlayer + ' annonce ' + enderType + '</p>');
     
-    //display the number total of each value
+    //display the total number of each dice value
     var str = ["paco(s)", "deux", "trois", "quatre", "cinq", "six"];
     var totalDicesStr = '<p style="text-align:left">Il y avait :<br>';
     totalDicesStr    += '<ul style="text-align:left">';
@@ -205,4 +220,19 @@ socket.on('endRound_res',function(data){
     //display who will loose or win a dice
     var res = data.hasWin?"gagne":"perd";
     $('#othersCalls').append('<p>' + data.pseudo + ' ' + res + ' ' + "un dé !" + '</p>');
-})
+}
+
+function updateNbDices(hasWin){
+    if(hasWin && nbDice<5){
+        nbDice++;
+    }
+    else if (!hasWin && nbDice>1){
+        nbDice--;
+    }
+    else if (!haswin && nbDice==1){
+        // c'est perdu
+    }
+    else{
+        //nothing to do
+    }
+}
