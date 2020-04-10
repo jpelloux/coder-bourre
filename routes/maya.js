@@ -2,10 +2,11 @@ var express = require('express');
 var path = require('path');
 var router = express.Router();
 var io = null;
-var enableLog = true;
+var enableLog = false;
 
 var gameInfos = {};
 var playerRooms= {};
+var turnState = "pending";
 
 function main(io_){
 	io = io_;
@@ -17,8 +18,7 @@ function main(io_){
 				customLog("Disconnect from : ", gameInfos[getRoom(socket)].players[socket.id]);
 				io.to(playerRooms[socket.id]).emit("needToRefreshRoom");
 				io.to("maya_lobby").emit("needToRefreshRoom");
-				delete gameInfos[getRoom(socket)].players[socket.id];
-				gameInfos[getRoom(socket)].nbPlayers--;
+				removePlayer(socket);
 				displayPlayerNames(socket);
 			}
 		});
@@ -52,7 +52,8 @@ function main(io_){
         });
 
         socket.on('diceCall', function(choosenDices){
-        	gameInfos[getRoom(socket)].turnInfo.choosenDices = choosenDices
+        	turnState = "takeOrLie"
+        	gameInfos[getRoom(socket)].turnInfo.choosenDices = choosenDices.sort(compare);
             sendToRoom(socket,"diceCalled", choosenDices);
             getNextPlayerChoice(socket);
         });
@@ -129,10 +130,33 @@ function addPlayer(socket, data, callback) {
 		startTurn(socket);
 	}
 }
+function removePlayer(socket) {
+	var currentPlayerIndex = gameInfos[getRoom(socket)].turnInfo.player;
+	var currentNextPlayerIndex = gameInfos[getRoom(socket)].turnInfo.nextPlayer;
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	var removedPlayerIndex = socketsIds.findIndex(socketId => socketId == socket.id);
+	
+	customLog("==================removedPlayerIndex" + removedPlayerIndex);
+	customLog("==================currentPlayerIndex" + currentPlayerIndex);
+	customLog("==================currentNextPlayerIndex" + currentNextPlayerIndex);
+	
+	delete gameInfos[getRoom(socket)].players[socket.id];
+	gameInfos[getRoom(socket)].nbPlayers--;
+	if (removedPlayerIndex == currentNextPlayerIndex) {
+		if (nextPlayerIndex >= Object.keys(gameInfos[getRoom(socket)].players).length) {
+			nextPlayerIndex = 0 ;
+		}
+		gameInfos[getRoom(socket)].turnInfo.nextPlayer = nextPlayerIndex;
+	}
+	if (removedPlayerIndex == currentPlayerIndex) {
+		startTurn(socket);
+	}
+
+}
 function displayPlayerNames(socket) {
 	customLog("----------------------------------------------------" + getRoom(socket));
 	if (socket && getRoom(socket)) {
-		enableLog ? customLog(getRoom(socket) + ' : displayPlayerNames : ' + Object.values(gameInfos[getRoom(socket)].players)) : "";
+		customLog(getRoom(socket) + ' : displayPlayerNames : ' + Object.values(gameInfos[getRoom(socket)].players));
 		sendToRoom(socket, "dispPlayersNames", Object.values(gameInfos[getRoom(socket)].players));
 	}
 }
@@ -142,7 +166,7 @@ function getDices(nbDices){
         for (var j=0; j<nbDices; j++){
             values.push(Math.floor(Math.random() * Math.floor(6)) + 1);
         }
-    return values;
+    return values.sort(compare);
 }
 
 function changeTurn(socket) {
@@ -169,8 +193,9 @@ function startGame(socket, callback, io) {
 	customLog("socket startGame : " + socketsIds[gameInfos[getRoom(socket)].turnInfo.player]);
 	startTurn(socket);
 }
-function startTurn(socket, callback) {
+function startTurn(socket) {
 	customLog("Start turn");
+	turnState = "diceCall";
 	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
 	var turn = {
 		"activPlayer": gameInfos[getRoom(socket)].players[socketsIds[gameInfos[getRoom(socket)].turnInfo.player]],
