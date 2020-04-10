@@ -154,6 +154,7 @@ function displaySpecialAction(dices) {
 	} else {
 		customHide("#button_51");
 		customShow("#specialAction");
+		customShow("#choose_call");
 	}
 }
 function display51() {
@@ -172,8 +173,17 @@ function displayLied(result) {
 	coloration('#sip_table tr:last', turn.activePlayer);
 }
 function displayDicesOnChat(dices) {
-	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + " annonce " + dices[0] + dices[1] + "</td></tr>");
+	diceStr = diceParser(dices)
+	$('#sip_table tr:last').after("<tr><td>" + turn.activePlayer + " annonce " + diceStr + "</td></tr>");
 	coloration('#sip_table tr:last', turn.activePlayer);
+}
+function diceParser(dices) {
+	if (isDouble(dices)) {
+		return "double " + dices[0];
+	} else if (isMaya(dices)){
+		return "maya !";
+	}
+	return dices[0] + dices[1];
 }
 function displayTakeOrlieOnChat(choice) {
 	var str;
