@@ -93,9 +93,17 @@ function main(io){
 
             if(data.enderType=="menteurButton"){
                 hasWin = false;
-                pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player loose
+                if(valueCalled!=1){
+                    pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player loose
+                }else{
+                    pseudo = gameInfos.dices[valueCalled-1]<numberCalled ? data.lastPlayer : data.pseudo;
+                }
             }else if(data.enderType=="toutpileButton"){
-                hasWin = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]==numberCalled;
+                if(valueCalled!=1){
+                    hasWin = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]==numberCalled;
+                }else{
+                    hasWin = gameInfos.dices[valueCalled-1]==numberCalled;
+                }
                 pseudo = data.pseudo;
             }else{
                 throw "id of enderButton is not recognized";
