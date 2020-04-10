@@ -16,12 +16,6 @@ function main(io){
 
 
     nsp_home.on('connection', function(socket) { 
-        /**
-         * Répondre à la socket :                           socket.emit('', '');
-         * Répondre à tout le monde sauf l'emetteur :       ?
-         * Répondre à tout le monde :                       nsp_game.emit('', '');
-         * Répondre à tout le monde même hors namespace :   io.emit('');
-         */
 
         // prevent user to choose an unavaiable pseudo
         socket.on("playingRequest", function(pseudo, fn){
@@ -33,14 +27,8 @@ function main(io){
 
 
     nsp_game.on('connection', function(socket) { 
-        /**
-         * Répondre à la socket :                           socket.emit('', '');
-         * Répondre à tout le monde sauf l'emetteur :       ?
-         * Répondre à tout le monde :                       nsp_game.emit('', '');
-         * Répondre à tout le monde même hors namespace :   io.emit('');
-         */
         
-        // store informations when a new player reach the game, then broadcast the info
+        // stores informations when a new player reach the game, then broadcast the info
         socket.on('gameReached', function(player, fn){
             if(!gameInfos.players.includes(player)){ // manage users who press f5 during game (shitty way tot do that)
                 gameInfos.players.push(player);
@@ -49,11 +37,16 @@ function main(io){
             fn(gameInfos.players);
         });
 
+        // When a player starts the game, generates a random first player and allows everybody to get dices
         socket.on('dispGame_req', function(){
+            if(gameInfos.players.length<=2){ // toutpile is forbidden when there are only two players
+                nsp_game.emit('forbidToutpile', '');
+            }
             gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
             nsp_game.emit('dispGame_res', '');
         });
 
+        // At the beggining of each round, wait for every player to get his dices, then fired startGame event
         socket.on('getDices_req', function(nbDice, fn){
             fn(getDices(nbDice));
             gameInfos.nbReadyPlayers++;
@@ -63,7 +56,8 @@ function main(io){
         });
 
 
-        /** "call" is an object which contains : 
+        /** When a call is made, relays the informations to the next player
+         *  "call" is an object which contains : 
          *      - "pseudo" : the pseudo of the last player
          *      - "numberCalled" : the last number of value called
          *      - "valueCalled" : the last value called
@@ -77,7 +71,8 @@ function main(io){
                                         "valueCalled":call.valueCalled });
         });
 
-        /** "data" is an object which contains :
+        /** When a player hit an ender button (menteur or toutpile), calculates who lose or win a dice and tells everybody
+         *  "data" is an object which contains :
          *      - "pseudo": the pseudo of the player who ended the game
          *      - "lastPlayer": the pseudo of the player before the one who ended the game
          *      - "enderType": either "menteurButton" or "toutpileButton"
@@ -87,14 +82,12 @@ function main(io){
         socket.on('endRound_req', function(data){
             var hasWin;
             var pseudo;
-
             var valueCalled = parseInt(data.valueCalled);
             var numberCalled = parseInt(data.numberCalled);
-
             if(data.enderType=="menteurButton"){
                 hasWin = false;
                 if(valueCalled!=1){
-                    pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player loose
+                    pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player lose
                 }else{
                     pseudo = gameInfos.dices[valueCalled-1]<numberCalled ? data.lastPlayer : data.pseudo;
                 }
@@ -108,7 +101,6 @@ function main(io){
             }else{
                 throw "id of enderButton is not recognized";
             }
-
             nsp_game.emit('endRound_res', {
                 "endingPlayer":data.pseudo,
                 "enderType": data.enderType,
@@ -116,19 +108,27 @@ function main(io){
                 "pseudo": pseudo, 
                 "dices": gameInfos.dices
             });
-
+            //initialize informations for next round
             gameInfos.nbReadyPlayers=0;
             gameInfos.turn=gameInfos.players.indexOf(pseudo);
             gameInfos.dices=[0, 0, 0, 0, 0, 0];
-
         });
 
-        socket.on('playerQuit_req', function(pseudo){
+        // When a player doesn't have dices, update infos
+        socket.on('playerLose_req', function(pseudo){
+            nsp_game.emit('playerLose_res', pseudo);
             gameInfos.players.splice(gameInfos.players.indexOf(pseudo), 1);
+            nsp_game.emit('updatePlayersList', gameInfos.players);
+            if(gameInfos.players.length==1){
+                nsp_game.emit('youWin', gameInfos.players[0]);
+            }else if(gameInfos.players.length<=2){
+                nsp_game.emit('forbidToutpile', '');
+            }
             gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length; 
-            nsp_game.emit('playerQuit_res', pseudo);
+           
         });
 
+        // Relays the information to everyone is the next round will be in palifico
         socket.on('palifico_req', function(){
             nsp_game.emit('palifico_res', '');
         });

@@ -1,9 +1,10 @@
 var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
-var nbDice = 3;
+var nbDice = 5;
 var myPalificoHappenned = false;
 var palificoRound = false;
+var useToutpile = true;
 
 
 
@@ -19,9 +20,8 @@ socket.emit("gameReached", pseudo, function(players){
 
 // updates players list when a new player reach the game room
 socket.on("updatePlayersList", function(players){
-    dispPlayersNames(players)
+    dispPlayersNames(players);
 });
-
 function dispPlayersNames(namesTab){
     var str = "";
     namesTab.forEach(el => {
@@ -35,7 +35,6 @@ function dispPlayersNames(namesTab){
 $('#start_button').click(function(){
     socket.emit('dispGame_req', '');
 });
-
 socket.on("dispGame_res", function(){
     document.getElementById('start_button').style.display = "contents";
     document.getElementById('content').style.display = "contents";
@@ -52,7 +51,7 @@ socket.on("dispGame_res", function(){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE PHASE OF GETTING DICES  *
 ***************************************************************************/
 
-// Asks and receives the values of dices from the server, and displays the right images 
+// Asks and receives the values of dices from the server, and displays the dices
 $('#getDices_button').click(function(){
     socket.emit('getDices_req', nbDice, function(dices){
         var str = "";
@@ -70,10 +69,12 @@ $('#getDices_button').click(function(){
 
 
 
-/**************************************************************************************
- * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE CALLING SYSTEM (HEART OF THE GAME)  *
-***************************************************************************************/
 
+/*****************************************************************
+ * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE CALLING SYSTEM *
+******************************************************************/
+
+// listen to the event fired by the server when everybody asked for his dices
 socket.on('startGame', function(player){
     document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
     document.getElementById('othersCalls').innerHTML = '';
@@ -84,7 +85,6 @@ socket.on('startGame', function(player){
         dispPossibleCalls('');
     }
 });
-
 
 /**
  * Gets the information from the server that a call was made
@@ -98,10 +98,11 @@ socket.on('callMade_res', function(data){
     $('#othersCalls').append('<p>' + data.lastPlayer + ' annonce ' + data.numberCalled + ' ' + data.valueCalled + '</p>');
     var call = data.numberCalled + '_' + data.valueCalled;
     document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ data.nextPlayer.toUpperCase();
-
     if(data.nextPlayer!=pseudo){
         document.getElementById('numberBet').innerHTML = '';
         document.getElementById('enders_buttons').innerHTML = '';
+        $('#menteurButton').prop('disabled', false);
+        $('#toutpileButton').prop('disabled', false);
     }
     else{
         dispPossibleCalls(call);
@@ -109,13 +110,11 @@ socket.on('callMade_res', function(data){
     }
 });
 
-
 // Generates the html code that allows to make a call
 // "call" is in the form "X_Y"
 function dispPossibleCalls(call){
     var numberCalled = call=='' ? 0 : parseInt(call.split('_')[0]);
     var valueCalled = call=='' ? 0 : parseInt(call.split('_')[1]);
- 
     var values = "";
     for (var i=1; i<=6; i++){
         values += '<p>'
@@ -150,8 +149,6 @@ function dispPossibleCalls(call){
                     }
                 }
             }
-
-            
             values += j.toString() + '\t';
             values += '</span>'
         }
@@ -161,10 +158,11 @@ function dispPossibleCalls(call){
     document.getElementById('numberBet').innerHTML = values;
 }
 
-
+// fonction called when a call is made
 function valuePressed(id){
     socket.emit('callMade_req', {"pseudo":pseudo, "numberCalled":id.toString().split("_")[2], "valueCalled":id.toString().split("_")[1] });
 }
+
 
 
 
@@ -176,16 +174,26 @@ function valuePressed(id){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE PRESSURE ON AN ENDER BUTTON (MENTEUR & TOUTPILE)  *
 *****************************************************************************************************/
 
+// This event is fired when there are less than two players
+socket.on('forbidToutpile', function(){
+    useToutpile = false;
+})
+
+// Generates the html code that allows to end the game by calling "menteur" or "toutpile"
 function dispEndersButtons(lastPlayer, call){
     var values = '<p>';
     values += '<button id="menteurButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">MENTEUR !</button>';
-    values += '<p></p>';
-    values += '<button id="toutpileButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">TOUT PILE</button>';
+    if(useToutpile){
+        values += '<p></p>';
+        values += '<button id="toutpileButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">TOUT PILE</button>';
+    }
     values += '</p>';
     document.getElementById('enders_buttons').innerHTML = values;
 }
 
 function enderButtonPressed(enderType, lastCall, lastPlayer){
+    $('#menteurButton').prop('disabled', true);
+    $('#toutpileButton').prop('disabled', true);
     socket.emit('endRound_req', {
         "pseudo": pseudo,
         "lastPlayer": lastPlayer,
@@ -194,32 +202,42 @@ function enderButtonPressed(enderType, lastCall, lastPlayer){
         "valueCalled":lastCall.toString().split("_")[1]})
 }
 
-/** "data" is an object which contains :
+
+
+
+
+
+
+
+/**********************************************************************************
+ * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE END OF A ROUND AND OF THE GAME  *
+***********************************************************************************/
+
+
+/** Listens to the answer from the server which contains the result of the round
+ * "data" is an object which contains :
  *      - "endingPlayer": the pseudo of the player who ended the game
  *      - "enderType": either "menteurButton" or "toutpileButton"
  *      - "hasWin": a boolean true if a dice is won, or truf if a dice is lost
- *      - "pseudo": the pseudo of the player who have lose or win a dice
+ *      - "pseudo": the pseudo of the player who have lost or won a dice
  *      - "dices": an array containing the actual number of each dice (total of all hands)
 */
 socket.on('endRound_res',function(data){
     palificoRound=false; // useful only if the previous round was in palifico
-    
+    dispEndGame(data);
     if(pseudo == data.pseudo){
         updateNbDices(data.hasWin);
     }
-    dispEndGame(data);
     $('#getDices_button').prop('disabled', false);
 });
 
 
-// description of "data" is with the socket listening to 'endRound_res'
+// Displays the differents infos after the end of the round ("data" is the same that in 'endRound_res')
 function dispEndGame(data){
     document.getElementById('whosTurn').innerHTML = 'FIN DE LA MANCHE, RELANCEZ VOS DÉS !';
-
     //display who ended the game and how
     var enderType = data.enderType=="menteurButton" ? "menteur !" : "tout pile !";
     $('#othersCalls').append('<p>' + data.endingPlayer + ' annonce ' + enderType + '</p>');
-    
     //display the total number of each dice value
     var str = ["paco(s)", "deux", "trois", "quatre", "cinq", "six"];
     var totalDicesStr = '<p style="text-align:left">Il y avait :<br>';
@@ -229,37 +247,55 @@ function dispEndGame(data){
     }
     totalDicesStr    += '</ul></p>';
     $('#othersCalls').append(totalDicesStr);
-
-    //display who will loose or win a dice
+    //display who will lose or win a dice
     var res = data.hasWin?"gagne":"perd";
     $('#othersCalls').append('<p>' + data.pseudo + ' ' + res + ' ' + "un dé !" + '</p>');
 }
 
+// Updates the number of dices after the end of a round, end fired the palifico end playerLose events
 function updateNbDices(hasWin){
     if(hasWin && nbDice<5){
         nbDice++;
     }else if (!hasWin && nbDice>0){
         nbDice--;        
-    }else{
-        //nothing to do
-    }
-    
+    }else{}//nothing to do
+
     if(nbDice==0){
-        socket.emit('playerQuit_req', pseudo);
-        document.getElementById('dices_area').innerHTML = 'T\'as perdu gros nul !';
+        socket.emit('playerLose_req', pseudo);
+        var strloser ='';
+        strloser += '<p>T\'as perdu gros nul !</p>'
+        strloser += '<p><input type="button" onClick="redirectToHomePage()" value="Retourner au menu" /></p>'
+        document.getElementById('dices_area').innerHTML = strloser;
     }else if(!myPalificoHappenned && nbDice==1){ //palifico (triggered only once per player)
         socket.emit('palifico_req', '');
         myPalificoHappenned = true;
     }
 }
 
+// Provides a palifico round when necessary
 socket.on('palifico_res',function(){
     $('#othersCalls').append('<p>Palifico !</p>');
     palificoRound=true;
 });
 
-socket.on('playerQuit_res',function(deadPlayer){
+// Displays when a player have lost
+socket.on('playerLose_res',function(deadPlayer){
     $('#othersCalls').append('<p>' + deadPlayer + ' est mort !' + '</p>');
 });
 
-//penser a désactiver les enderbuttons apres appui et a les reactiver en début de round
+// Displays when a player have won
+socket.on('youWin', function(player){
+    $('#othersCalls').append('<p>' + 'Et c\'est une victoire pour ' + player + ' !</p>');
+    if(player==pseudo){
+        var strWinner ='';
+        strWinner += '<p>Victoire, wouhou sec pour tout le monde !</p>'
+        strWinner += '<p><input type="button" onClick="redirectToHomePage()" value="Retourner au menu" /></p>'
+        document.getElementById('dices_area').innerHTML = strWinner;
+    }
+})
+
+
+function redirectToHomePage()
+{
+   window.location.href = "/";
+}
