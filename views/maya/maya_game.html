@@ -1,0 +1,88 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/static/maya/maya_game.css" />
+        <title>Maya</title>
+    </head>
+    <body>
+        
+        <h1>MAYA</h1>
+
+        <div id="waitingScreen">
+            <fieldset class="waitingScreen_fieldset">
+                <legend>Salon <span id="lobbyName"></span> : en attente d'autres joueurs</legend>
+                <div class="loader"></div>
+            </fieldset>
+        </div>
+
+        <div id="game">
+            <fieldset class="information_fieldset">
+                <legend>Informations</legend>
+                <div id="informations_table">
+                    <table id="sip_table">
+                        <tr>
+                            <td>Bienvenue dans cette partie !</td>
+                        </tr>
+                     </table>
+                </div>
+            </fieldset>
+            <fieldset class="game_fieldset">
+                <legend>Salon <span id="lobbyName_2"></span> : partie en cours</legend>
+            
+                 <div id="title_container">
+                     <div id="title_txt"><b>Joueur : </b><div id="active_player_name"></div></div>
+                     <div id="title_txt"><b>Suivant : </b><div id="next_active_player_name"></div></div>
+                 </div>
+            
+                 <div id="dicesCalled">
+                 </div>
+            
+                 <div id="takeOrLie">
+                    <fieldset class="takeOrLie_fieldset">
+                        <legend>Votre choix</legend>
+                        <button id=button_take>Je prend</button><button id=button_lie>Menteur !</button>
+                    </fieldset>
+                 </div>
+            
+                 <div id="your_turn">
+                    <fieldset class="dice_fieldset">
+                        <legend>Vos dés</legend>
+                        <p id="dices"></p>
+                    </fieldset>  
+                    <div id="your_call">
+                        <fieldset class="action_fieldset">
+                            <legend>Votre annonce</legend>
+                            <form id="choose_call" name="form" method="post" action="some">
+                                <input type="number" id="dice1" name="dice1" min="1" max="6" required>
+                                <input type="number" id="dice2" name="dice2" min="1" max="6" required>
+                                <input type="submit">
+                            </form>
+                            <button id=button_51>51 tout le monde boit</button>
+                            <div id="specialAction">
+                                <button id=button_maya>Maya</button><button id=button_copy>La vérité</button>
+                            </div>
+                        </fieldset>
+                    </div>    
+                    
+                 
+                </div>
+        
+            </fieldset>
+        </div>
+
+        <fieldset class="players_fieldset">
+            <legend>Joueurs connectés</legend>
+            <div id="players">
+                <table id="players_tables">
+                    <tr>
+                    </tr>
+                </table>
+            </div>
+        </fieldset>
+        
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script type="text/javascript" src="../../static/maya/maya_game.js"></script>   
+    </body>
+</html>

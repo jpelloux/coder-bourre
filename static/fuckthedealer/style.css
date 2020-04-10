@@ -1,0 +1,91 @@
+body 
+{
+	font-family: sans-serif;
+}
+.tableCards
+{
+	height: 200px;
+	border-collapse: collapse;
+	border: solid 1px black;
+	width: 100%;
+	table-layout: fixed ;
+}
+.tableCards td
+{
+	border-left: 1px solid black;
+    border-right: 1px solid black;
+	text-align: center;
+	width: 7.69%; /* 100% / 13 cartes */
+	height: 17%;;
+
+}
+.tableCards td img
+{
+	width: 20px;
+}
+.cardHeader td
+{
+	height:15% !important;
+}
+h1
+{
+	text-align: center;
+}
+#pregameLobby
+{
+	margin: auto;
+	padding: 15px;
+	width: 33%;
+	border: solid 1px black;
+}
+#playerList
+{
+	border: solid 1px black;
+}
+#game
+{
+	display: none;
+}
+#dealer
+{
+	display: none;
+	margin-top: 3%;
+	text-align: center;
+}
+#card
+{
+	width: 200px;
+	height: 300px;
+	border: hidden;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+#cardImg
+{
+	width: 200px;
+}
+.cardHeader
+{
+	height: 50px;
+}
+.gamePlayerList
+{
+	width: 100%;
+	height: 4%;
+	text-align: center;
+	padding: 10px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	table-layout: fixed;
+}
+.gamePlayerList td 
+{
+	white-space: nowrap;
+	overflow: hidden;
+}
+.dealerToken
+{
+	color: red;
+	font-weight: bold;
+}
