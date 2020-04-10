@@ -7,19 +7,21 @@
  
     <body>
 
-        <h1>JOUONS AU PACO</h1>
+        <h1>WELCOME TO PACO !</h1>
 
-        <form method="get" id="formulary">
+        <form id="form">
             <label for="pseudo">Pseudo:
-                <input type="text" id="pseudo" name="pseudo" autofocus />
+                <input  type="text" 
+                        id="pseudo" 
+                        name="pseudo" 
+                        autofocus 
+                        required
+                        pattern="\S.*"/>
             </label>
-            <input type="submit" id='playing_request' value="Rejoindre la partie" />
-            
+            <input  type="submit" 
+                    id='playing_request' 
+                    value="Rejoindre la partie" />
         </form>
-
-        <a href="/paco/game"><input type="button" disabled="true" id="game_starter" value="Démarrer le jeu"/></a>
-
-        <section id="text_area"></section>
 
         
         <script src="/socket.io/socket.io.js"></script>

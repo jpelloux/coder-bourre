@@ -1,15 +1,17 @@
 body {
     background-color: chartreuse;
+  }
+  
+  #content{
     text-align: center;
+    display: none;
   }
-
-  #playersName{
-    text-align: left;
+  #dices_area{
+    height: 100px;
   }
-
-  #dices{
+  /*#dices{
       font-size: 40px;
-  }
+  }*/
   
   #calls{
     width: 100%;
@@ -46,12 +48,18 @@ body {
   #myCall{
     flex:1;
     display: flex;
-    justify-content: center;
+    flex-direction: row;
     font-size: 40px;
+}
+
+#buttons{
+ text-align: center;
+ width: 30%;
 }
 
   #numberBet{
     padding-right: 20px;
+    flex:1;
   }
 
   #valueBet{

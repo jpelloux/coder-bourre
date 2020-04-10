@@ -1,17 +1,15 @@
-var socket = io();
+var socket = io('/home');
 
-$('#playing_request').click(function(){
+$('#form').submit(function(){
     var pseudo = $('#pseudo').val();
     sessionStorage.setItem('pseudo', pseudo);
-    socket.emit('playRequest', pseudo);
-    $('#text_area').prepend('<p>Vous (' + pseudo + ') avez demandé à rejoindre la partie</p>');
-    $('#playing_request').prop('disabled', true);
+    socket.emit("playingRequest", pseudo, function(accesDenied){
+        if(accesDenied){
+            alert("Pseudo indisponible");
+            return;
+        }
+        window.location.href = "/paco/game";
+    })
+    
+    
 });
-
-socket.on("newPlayer", function(m){
-    $('#text_area').append('<p>' + m + ' a demandé à rejoindre la partie</p>');
-})
-
-socket.on("canDispGame", function(m){
-    $('#game_starter').prop('disabled', false);
-})
