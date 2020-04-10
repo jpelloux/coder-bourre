@@ -183,7 +183,7 @@ function diceParser(dices) {
 	} else if (isMaya(dices)){
 		return "maya !";
 	}
-	return dices[0] + dices[1];
+	return "" + dices[0] + dices[1];
 }
 function displayTakeOrlieOnChat(choice) {
 	var str;
