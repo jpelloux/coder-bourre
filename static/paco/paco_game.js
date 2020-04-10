@@ -1,7 +1,9 @@
 var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
-var nbDice = 5;
+var nbDice = 3;
+var myPalificoHappenned = false;
+var palificoRound = false;
 
 
 
@@ -83,6 +85,7 @@ socket.on('startGame', function(player){
     }
 });
 
+
 /**
  * Gets the information from the server that a call was made
  * "data" is an object which contains :
@@ -117,28 +120,37 @@ function dispPossibleCalls(call){
     for (var i=1; i<=6; i++){
         values += '<p>'
         for (var j=1; j<=15; j++){
-            if(call == '') 
-            {// case of the first call of the round
-                if(i!=1){ // we cannot start with a call on pacos
+            if(palificoRound){
+                if(call == '') {// case of the first call of the round
                     values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
+                }else{// cases of the next calls
+                    if (j>numberCalled && i==valueCalled){ //allows the calls of type X_Y+
+                    
+                        values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
+                    }else{
+                        values += '<span style="color:#C4C4C4" id=\"value_' + j.toString() + '_' +  i.toString() + '\">';
+                    }
                 }
-                else{
-                    values += '<span style="color:#C4C4C4" id=\"value_' + j.toString() + '_' +  i.toString() + '\">';
+            }else{
+                if(call == '') {// case of the first call of the round
+                    if(i!=1){ // we cannot start with a call on pacos
+                        values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
+                    }else{
+                        values += '<span style="color:#C4C4C4" id=\"value_' + j.toString() + '_' +  i.toString() + '\">';
+                    }
+                }else{// cases of the next calls
+                    if(     (valueCalled!=1 && j==numberCalled && i>valueCalled) //allows the calls of type X_Y+
+                            || (j>numberCalled && i==valueCalled) //allows the calls of type X+_Y
+                            || (valueCalled!=1 && i==1 && j>=numberCalled/2) //allows the calls of pacos
+                            || (valueCalled==1 && (i==1 && j>numberCalled || i!=1 && j>numberCalled*2)) //manages the case where the last call was on pacos
+                            ){
+                        values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
+                    }else{
+                        values += '<span style="color:#C4C4C4" id=\"value_' + j.toString() + '_' +  i.toString() + '\">';
+                    }
                 }
             }
-            else 
-            {// cases of the next calls
-                if(     (valueCalled!=1 && j==numberCalled && i>valueCalled) //allows the calls of type X+_Y
-                        || (j>numberCalled && i==valueCalled) //allows the calls of type X_Y+
-                        || (valueCalled!=1 && i==1 && j>=numberCalled/2) //allows the calls of pacos
-                        || (valueCalled==1 && (i==1 && j>numberCalled || i!=1 && j>numberCalled*2)) //manages the case where the last call was on pacos
-                        ){
-                    values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
-                }
-                else{
-                    values += '<span style="color:#C4C4C4" id=\"value_' + j.toString() + '_' +  i.toString() + '\">';
-                }
-            }
+
             
             values += j.toString() + '\t';
             values += '</span>'
@@ -190,7 +202,8 @@ function enderButtonPressed(enderType, lastCall, lastPlayer){
  *      - "dices": an array containing the actual number of each dice (total of all hands)
 */
 socket.on('endRound_res',function(data){
-
+    palificoRound=false; // useful only if the previous round was in palifico
+    
     if(pseudo == data.pseudo){
         updateNbDices(data.hasWin);
     }
@@ -225,14 +238,28 @@ function dispEndGame(data){
 function updateNbDices(hasWin){
     if(hasWin && nbDice<5){
         nbDice++;
-    }
-    else if (!hasWin && nbDice>1){
-        nbDice--;
-    }
-    else if (!haswin && nbDice==1){
-        // c'est perdu
-    }
-    else{
+    }else if (!hasWin && nbDice>0){
+        nbDice--;        
+    }else{
         //nothing to do
     }
+    
+    if(nbDice==0){
+        socket.emit('playerQuit_req', pseudo);
+        document.getElementById('dices_area').innerHTML = 'T\'as perdu gros nul !';
+    }else if(!myPalificoHappenned && nbDice==1){ //palifico (triggered only once per player)
+        socket.emit('palifico_req', '');
+        myPalificoHappenned = true;
+    }
 }
+
+socket.on('palifico_res',function(){
+    $('#othersCalls').append('<p>Palifico !</p>');
+    palificoRound=true;
+});
+
+socket.on('playerQuit_res',function(deadPlayer){
+    $('#othersCalls').append('<p>' + deadPlayer + ' est mort !' + '</p>');
+});
+
+//penser a désactiver les enderbuttons apres appui et a les reactiver en début de round

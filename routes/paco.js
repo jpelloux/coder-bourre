@@ -115,6 +115,16 @@ function main(io){
 
         });
 
+        socket.on('playerQuit_req', function(pseudo){
+            gameInfos.players.splice(gameInfos.players.indexOf(pseudo), 1);
+            gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length; 
+            nsp_game.emit('playerQuit_res', pseudo);
+        });
+
+        socket.on('palifico_req', function(){
+            nsp_game.emit('palifico_res', '');
+        });
+
 
     })
 
