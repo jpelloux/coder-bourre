@@ -5,6 +5,7 @@ var io = null;
 
 var gameInfos = {
     "players": [], // pseudos of the differents players
+    "sockets": [], // ids of players sockets
     "nbReadyPlayers": 0, // increment each time someone get his dices, start game when =players.length
     "turn": 0, // used to tell to clients that it's the turn of players[turn]
     "dices": [0, 0, 0, 0, 0, 0] // total of each dice value during a round
@@ -27,11 +28,12 @@ function main(io){
 
 
     nsp_game.on('connection', function(socket) { 
-        
+
         // stores informations when a new player reach the game, then broadcast the info
         socket.on('gameReached', function(player, fn){
             if(!gameInfos.players.includes(player)){ // manage users who press f5 during game (shitty way tot do that)
                 gameInfos.players.push(player);
+                gameInfos.sockets.push(socket.id);
             }
             nsp_game.emit('updatePlayersList', gameInfos.players);
             fn(gameInfos.players);
@@ -63,12 +65,8 @@ function main(io){
          *      - "valueCalled" : the last value called
         */
         socket.on('callMade_req', function(call){
-            gameInfos.turn += 1;
-            gameInfos.turn %= gameInfos.players.length;
-            nsp_game.emit('callMade_res', {  "lastPlayer": call.pseudo,
-                                        "nextPlayer": gameInfos.players[gameInfos.turn], 
-                                        "numberCalled": call.numberCalled, 
-                                        "valueCalled":call.valueCalled });
+            gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length;
+            nextPlayer(call);
         });
 
         /** When a player hit an ender button (menteur or toutpile), calculates who lose or win a dice and tells everybody
@@ -114,22 +112,11 @@ function main(io){
             gameInfos.dices=[0, 0, 0, 0, 0, 0];
         });
 
-        // When a player doesn't have dices, update infos
+        // When a player doesn't have dices, updates infos
         socket.on('playerLose_req', function(pseudo){
             nsp_game.emit('playerLose_res', pseudo);
-            gameInfos.players.splice(gameInfos.players.indexOf(pseudo), 1);
-            nsp_game.emit('updatePlayersList', gameInfos.players);
-            if(gameInfos.players.length==1){
-                nsp_game.emit('youWin', gameInfos.players[0]);
-                gameInfos.players=[];
-                gameInfos.turn=0;
-                gameInfos.nbReadyPlayers=0;
-                gameInfos.dices=[0, 0, 0, 0, 0, 0];
-            }else if(gameInfos.players.length<=2){
-                nsp_game.emit('forbidToutpile', '');
-            }
-            gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length; 
-           
+            playerLeftManager(gameInfos.players.indexOf(pseudo));
+            gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length;
         });
 
         // Relays the information to everyone is the next round will be in palifico
@@ -137,6 +124,56 @@ function main(io){
             nsp_game.emit('palifico_res', '');
         });
 
+
+        socket.on('disconnect', function(){
+            nsp_game.emit("disconnectedPlayer", gameInfos.players[gameInfos.sockets.indexOf(socket.id)]);
+            playerLeftManager(gameInfos.sockets.indexOf(socket.id));
+        });
+
+        // Deletes the player and his socket at "index" and manages if there is a palifico or a loser 
+        function playerLeftManager(index){
+            if(gameInfos.turn==gameInfos.players.length || gameInfos.turn==gameInfos.players.length-1){
+                            gameInfos.turn--;
+                        }
+            gameInfos.players.splice(index, 1);
+            var s = gameInfos.sockets.splice(index, 1);
+            nsp_game.emit('updatePlayersList', gameInfos.players);
+            if(gameInfos.players.length==1){
+                nsp_game.emit('youWin', gameInfos.players[0]);
+                initializeData();
+            }else if(gameInfos.players.length<=2){
+                nsp_game.emit('forbidToutpile', '');
+            }
+            console.log("coin", index, gameInfos.turn)
+            if(index==gameInfos.turn){
+               /* var indexIdLastSocket = Math.abs((index-1)%gameInfos.players.length);
+                console.log(index, indexIdLastSocket)
+                nsp_game.emit('getLastCall_req', gameInfos.sockets[indexIdLastSocket])*/
+                //nextPlayer();
+            }
+            
+        }
+
+        socket.on('getLastCall_res', function(call){
+            console.log(call)
+        })
+
+        // Pass the turn to the next player to make a call (used when a player is disconnected). Call is the same that in 'callMade_req'
+        function nextPlayer(call){
+            nsp_game.emit('callMade_res', {  
+                "lastPlayer": call.pseudo,
+                "nextPlayer": gameInfos.players[gameInfos.turn], 
+                "numberCalled": call.numberCalled, 
+                "valueCalled":call.valueCalled });
+        }
+
+        function initializeData(){
+            gameInfos.players= [];
+            gameInfos.sockets= [];
+            gameInfos.nbReadyPlayers= 0;
+            gameInfos.turn= 0;
+            gameInfos.dices= [0, 0, 0, 0, 0, 0];
+        }
 
     })
 

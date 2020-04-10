@@ -5,6 +5,7 @@ var nbDice = 5;
 var myPalificoHappenned = false;
 var palificoRound = false;
 var useToutpile = true;
+var savedCall = {'numberCalled': 0, 'valueCalled': 0} // used if a player is disconnected
 
 
 
@@ -95,6 +96,8 @@ socket.on('startGame', function(player){
  *      - "valueCalled" : the last value called
  */
 socket.on('callMade_res', function(data){
+    savedCall.numberCalled = data.numberCalled;
+    savedCall.valueCalled = data.valueCalled;
     $('#othersCalls').append('<p>' + data.lastPlayer + ' annonce ' + data.numberCalled + ' ' + data.valueCalled + '</p>');
     var call = data.numberCalled + '_' + data.valueCalled;
     document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ data.nextPlayer.toUpperCase();
@@ -163,7 +166,12 @@ function valuePressed(id){
     socket.emit('callMade_req', {"pseudo":pseudo, "numberCalled":id.toString().split("_")[2], "valueCalled":id.toString().split("_")[1] });
 }
 
-
+socket.on('getLastCall_req', function(player, fn){
+    if(player==pseudo){
+        console.log("moi !!");
+        emit('getLastCall_res', savedCall);
+    }
+})
 
 
 
@@ -292,8 +300,13 @@ socket.on('youWin', function(player){
         strWinner += '<p><input type="button" onClick="redirectToHomePage()" value="Retourner au menu" /></p>'
         document.getElementById('dices_area').innerHTML = strWinner;
     }
-})
+});
 
+
+// Displays when a player disconnected
+socket.on('disconnectedPlayer', function(player){
+    $('#othersCalls').append('<p>' + player + ' s\'est déconnecté' + '</p>');
+});
 
 function redirectToHomePage()
 {
