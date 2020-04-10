@@ -121,6 +121,10 @@ function main(io){
             nsp_game.emit('updatePlayersList', gameInfos.players);
             if(gameInfos.players.length==1){
                 nsp_game.emit('youWin', gameInfos.players[0]);
+                gameInfos.players=[];
+                gameInfos.turn=0;
+                gameInfos.nbReadyPlayers=0;
+                gameInfos.dices=[0, 0, 0, 0, 0, 0];
             }else if(gameInfos.players.length<=2){
                 nsp_game.emit('forbidToutpile', '');
             }
