@@ -124,11 +124,11 @@ function main(io){
             nsp_game.emit('palifico_res', '');
         });
 
-
+/*
         socket.on('disconnect', function(){
             nsp_game.emit("disconnectedPlayer", gameInfos.players[gameInfos.sockets.indexOf(socket.id)]);
             playerLeftManager(gameInfos.sockets.indexOf(socket.id));
-        });
+        });*/
 
         // Deletes the player and his socket at "index" and manages if there is a palifico or a loser 
         function playerLeftManager(index){
