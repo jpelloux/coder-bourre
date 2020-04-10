@@ -1,4 +1,4 @@
-var socket = io('/drinkingWar');
+var socket = io('/coinche');
 
 customHide("#newRoomDiv");
 socket.emit('lobbyJoined');
@@ -36,17 +36,16 @@ socket.on("needToRefreshRoom", function(){
 
 /*** CALLBACK ***/
 function cbRoomsAndPlayers(roomsAndPlayers) {
-    debugger;
     clearComp("#rooms_list");
     var rooms = Object.entries(roomsAndPlayers).filter(([clé, valeur]) => {
-        return clé.includes("drinkingWar_game");
+        return clé.includes("coinche_game");
     });
     rooms.forEach(room => { 
         displayRooms(roomNameParser(room[0]), room[1]["length"]);
     });
 }
 function cbGoToGame() {
-    $(window).attr('location','/drinkingWar/game');
+    $(window).attr('location','/coinche/game');
 }
 
 /*** GAME ***/
@@ -55,7 +54,7 @@ function displayRooms(roomName, nbPlayers) {
     $('#rooms_list').append('<input type="radio" id="' + roomName+ '" name="room" value="' + roomName + '" class="room" required><label for="' + roomName + '">' + displayName + '</label><br>');
 }
 function roomNameParser(roomName) {
-    var name = roomName.split("drinkingWar_game_");
+    var name = roomName.split("coinche_game_");
     name.shift();
     return name.toString();
 }

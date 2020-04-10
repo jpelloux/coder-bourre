@@ -1,17 +1,25 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <link rel="stylesheet" href="/static/drinkingWar/drinkingWar_game.css" />
-        <title>Drinking War</title>
+        <link rel="stylesheet" href="/static/coinche/coinche_game.css" />
+        <title>Coinche</title>
     </head>
     <body>
         
-        <h1>Drinking War</h1>
+        <h1>Coinche</h1>
 
         <div id="waitingScreen">
             <fieldset class="waitingScreen_fieldset">
                 <legend>Salon <span id="lobbyName"></span> : en attente d'autres joueurs</legend>
                 <div class="loader"></div>
+                <fieldset class="chooseTeam_fieldset">
+                    <legend>Choix de l'équipe</legend>
+                        <div id="teamPlaceHolder">
+                            <div id="team1">Place libre</div>
+                            <div id="team2">Place libre</div>
+                        </div>
+                        <button id="startGame_button">Lancer la partie</button>
+                </fieldset>
             </fieldset>
         </div>
 
@@ -27,10 +35,27 @@
                 </div>
             </fieldset>
             <fieldset class="game_fieldset">
-                <legend>Salon <span id="lobbyName_2"></span> : partie en cours</legend>       
+                <legend>Salon <span id="lobbyName_2"></span> : partie en cours</legend> 
+                
+                <fieldset class="call_fieldset">
+                    <legend>Annonces</legend> 
+            
+                </fieldset>
             </fieldset>
+
+            <fieldset class="hand_fieldset">
+                <legend>Votre main</legend>
+                <div id="hand">
+                <table id="hand_table">
+                    <tr>
+                    </tr>
+                </table>
+            </div>
+            </fieldset>
+
         </div>
 
+        
         <fieldset class="players_fieldset">
             <legend>Joueurs connectés</legend>
             <div id="players">
@@ -44,6 +69,6 @@
 
         <script src="/socket.io/socket.io.js"></script>
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-        <script type="text/javascript" src="../../static/drinkingWar/drinkingWar_game.js"></script>   
+        <script type="text/javascript" src="../../static/coinche/coinche_game.js"></script>   
     </body>
 </html>

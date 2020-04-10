@@ -2,7 +2,7 @@
 html {
   background: Ivory;
 }
-h1, h2 {
+h1, h2, div {
   color: black;
   text-transform: capitalize;
   font-variant: small-caps;
@@ -61,6 +61,29 @@ fieldset.waitingScreen_fieldset {
   margin-top: 50px;
   width: 60%;
 }
+fieldset.chooseTeam_fieldset {
+  margin-top: 50px;
+}
+#teamPlaceHolder div {
+  height: 100px;
+  border: solid black 1px;
+}
+#team2 {
+  float:left;
+  width:49%;
+  height:100%;
+  background-color: IndianRed;
+  color: Ivory;
+  vertical-align: middle;
+}
+#team1 {
+  float:left;
+  width:49%;
+  height:100%;
+  background-color: LightBlue;
+  color: Ivory;
+  vertical-align: middle;
+}
 
 /*** GAME ***/
 fieldset.game_fieldset {
@@ -68,6 +91,10 @@ fieldset.game_fieldset {
   width: 60%;
   float:left;
   margin-left: 50px;
+  height: 70%; 
+  background-image: url("/static/img/utils/play_mat.jpg");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 }
 #game {
   margin: 0 auto;
@@ -91,7 +118,21 @@ button {
   margin-left: 10px;
 }
 
+/*** HAND ***/
+#hand_card{
+  width: 100%;
+}
+#hand_card:hover{
+  opacity:80%;
+}
+#hand_td:hover{
+  background-color: red;
+}
 
+fieldset.hand_fieldset {
+  margin-top: 50px;
+  width: 100%;
+}
 /*** INFORMATION ***/
 fieldset.information_fieldset {
   float:left;
