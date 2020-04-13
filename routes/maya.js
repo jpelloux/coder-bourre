@@ -2,76 +2,67 @@ var express = require('express');
 var path = require('path');
 var router = express.Router();
 var io = null;
+var enableLog = false;
 
-var gameInfos = {
-    "players": {},
-    "nbPlayers": 0
-};
-
-var turnInfo = {
-	"player": 0,
-	"nextPlayer": 1,
-	"realDices": [],
-	"choosenDices": []
-};
+var gameInfos = {};
+var playerRooms= {};
+var turnState = "pending";
 
 function main(io_){
 	io = io_;
     io.on('connection', function(socket) {
+/*****   ALL ****/
 		socket.on("disconnect", function () {
-			if(gameInfos.players[socket.id]) {
-				console.log("Disconnect from : ", gameInfos.players[socket.id]);
-				socket.broadcast.emit('removePlayer', gameInfos.players[socket.id]);
-				delete gameInfos.players[socket.id];
-				gameInfos.nbPlayers--;
-				displayPlayerNames();
+			customLog("disconnect from " + getRoom(socket));
+			if(gameInfos[getRoom(socket)] && gameInfos[getRoom(socket)].players[socket.id]) {
+				customLog("Disconnect from : ", gameInfos[getRoom(socket)].players[socket.id]);
+				io.to(playerRooms[socket.id]).emit("needToRefreshRoom");
+				io.to("maya_lobby").emit("needToRefreshRoom");
+				removePlayer(socket);
+				displayPlayerNames(socket);
 			}
 		});
 
-        socket.on('playRequest', function(pseudo, callback){
-        	if (pseudo) {
-        		addPlayer(socket, pseudo, callback);
-            	if (gameInfos.nbPlayers > 1){
-            	    io.sockets.emit('canDispGame', '');
-            	}
+/*****   LOBBY ****/
+		socket.on('lobbyJoined', function(){
+            joinRoom(socket, "maya_lobby");
+        });
+        socket.on('getRoomsAndPlayers', function(data, callback){
+        	customLog("getRoomsAndPlayers reached");
+            callback(io.sockets.adapter.rooms);
+        });
+
+/*****   GAME   ****/
+        socket.on('reachGame', function(data, callback){
+        	if (data && data.pseudo && data.roomName) {
+        		data.roomName = "maya_game_" + data.roomName;
+        		customLog(data.pseudo + " reach game : " + data.roomName);
+        		joinRoom(socket, data.roomName);
+        		addPlayer(socket, data, callback);
         	}
         });
 
-        socket.on('reachGame', function(pseudo, callback){
-        	if(pseudo) {
-        		console.log(pseudo + " reach game");
-        		addPlayer(socket, pseudo, callback);
-        		socket.join("maya_game");
-        		if (gameInfos.nbPlayers > 1) {
-        			console.log("more than 1 player");
-        			startGame(socket, callback);
-        		}
-        	}
-        });
-
-        socket.on('goToGame', function(data, callback){
-            goToGame(socket, callback);
-        });
         socket.on('getDices', function(m){
             socket.emit('getDices', getDices(2));
         });
 
         socket.on('newTurn', function(data, callback){
-        	console.log("newTurn");
+        	customLog("newTurn");
             startTurn(socket, callback);
         });
 
         socket.on('diceCall', function(choosenDices){
-        	turnInfo.choosenDices = choosenDices
-            io.to("maya_game").emit("diceCalled", choosenDices);
+        	turnState = "takeOrLie"
+        	gameInfos[getRoom(socket)].turnInfo.choosenDices = choosenDices.sort(compare);
+            sendToRoom(socket,"diceCalled", choosenDices);
             getNextPlayerChoice(socket);
         });
         socket.on('takeOrLie', function(choice){
-        	io.to("maya_game").emit("takeOrLieResult", choice);
+        	sendToRoom(socket,"takeOrLieResult", choice);
             takeOrLieResolver(socket, choice);
         });
         socket.on('51', function(choice){
-        	io.to("maya_game").emit("51", choice);
+        	sendToRoom(socket,"51", choice);
         	startTurn(socket);
         });
     })
@@ -85,145 +76,204 @@ function main(io_){
 
     return router;
 }
-
-function getDices(nbDices){
-    var values = [];
-        for (var j=0; j<nbDices; j++){
-            values.push(Math.floor(Math.random() * Math.floor(6)) + 1);
-        }
-    return values;
+/*****   ROOMS ****/
+function joinRoom(socket, roomName) {
+	if (playerRooms[socket.id]) {
+		socket.leave(getRoom(socket));
+		customLog("ping leave" + getRoom(socket));
+		sendToRoom(socket, "needToRefreshRoom");
+	}
+	socket.join(roomName);
+	playerRooms[socket.id] = roomName;
+	sendToRoom(socket, "needToRefreshRoom");
+	sendToLobby("needToRefreshRoom");
+	customLog("ping join " + playerRooms[socket.id]);
+}
+function getRoom(socket) {
+	return playerRooms[socket.id];
+}
+function sendToRoom(socket, event, data, cb) {
+	io.to(getRoom(socket)).emit(event, data, cb);
 }
 
+/*****   LOBBY ****/
 function goToGame(socket, callback) {
 	socket.broadcast.emit('goToGame');
 	if (callback) {
 		callback();
 	}
 }
+function sendToLobby(event, data, cb) {
+	io.to("maya_lobby").emit(event, data, cb);
+}
 
-function displayPlayerNames() {
-	if (gameInfos.players) {
-		console.log('displayPlayerNames : ' + Object.values(gameInfos.players));
-		io.to("maya_game").emit("dispPlayersNames", Object.values(gameInfos.players));
+/*****   GAME  ****/
+function addPlayer(socket, data, callback) {
+	customLog("playRequest from :" + data.pseudo +" socket : " + socket.id);
+	if (!gameInfos[getRoom(socket)]) {
+		gameInfos[getRoom(socket)] = {
+			"players": {},
+    		"nbPlayers": 0,
+    		"turnInfo": {
+				"player": 0,
+				"nextPlayer": 1,
+				"realDices": [],
+				"choosenDices": []
+			}
+		};
+	} 
+	gameInfos[getRoom(socket)].players[socket.id] = data.pseudo;
+	gameInfos[getRoom(socket)].nbPlayers++;
+	customLog(gameInfos[getRoom(socket)].nbPlayers + ' players : ' + Object.values(gameInfos[getRoom(socket)].players));
+	displayPlayerNames(socket);
+	if (gameInfos[getRoom(socket)].nbPlayers = 2) {
+		startTurn(socket);
+	}
+}
+function removePlayer(socket) {
+	var currentPlayerIndex = gameInfos[getRoom(socket)].turnInfo.player;
+	var currentNextPlayerIndex = gameInfos[getRoom(socket)].turnInfo.nextPlayer;
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	var removedPlayerIndex = socketsIds.findIndex(socketId => socketId == socket.id);
+	
+	customLog("==================removedPlayerIndex" + removedPlayerIndex);
+	customLog("==================currentPlayerIndex" + currentPlayerIndex);
+	customLog("==================currentNextPlayerIndex" + currentNextPlayerIndex);
+	
+	delete gameInfos[getRoom(socket)].players[socket.id];
+	gameInfos[getRoom(socket)].nbPlayers--;
+	if (removedPlayerIndex == currentNextPlayerIndex) {
+		if (nextPlayerIndex >= Object.keys(gameInfos[getRoom(socket)].players).length) {
+			nextPlayerIndex = 0 ;
+		}
+		gameInfos[getRoom(socket)].turnInfo.nextPlayer = nextPlayerIndex;
+	}
+	if (removedPlayerIndex == currentPlayerIndex) {
+		startTurn(socket);
+	}
+
+}
+function displayPlayerNames(socket) {
+	customLog("----------------------------------------------------" + getRoom(socket));
+	if (socket && getRoom(socket)) {
+		customLog(getRoom(socket) + ' : displayPlayerNames : ' + Object.values(gameInfos[getRoom(socket)].players));
+		sendToRoom(socket, "dispPlayersNames", Object.values(gameInfos[getRoom(socket)].players));
 	}
 }
 
-function addPlayer(socket, pseudo, callback) {
-	console.log("playRequest from :" + pseudo +" socket : " + socket.id);
-	gameInfos.players[socket.id] = pseudo;
-	gameInfos.nbPlayers++;
-
-	console.log(gameInfos.nbPlayers + ' players : ' + Object.values(gameInfos.players));
-	socket.broadcast.emit('newPlayer', pseudo);
-	displayPlayerNames();
+function getDices(nbDices){
+    var values = [];
+        for (var j=0; j<nbDices; j++){
+            values.push(Math.floor(Math.random() * Math.floor(6)) + 1);
+        }
+    return values.sort(compare);
 }
 
-function changeTurn() {
-	console.log(turnInfo);
-	console.log(gameInfos);
-	console.log(Object.keys(gameInfos.players).length);
+function changeTurn(socket) {
+	customLog(gameInfos[getRoom(socket)].turnInfo);
+	customLog(gameInfos);
+	customLog(Object.keys(gameInfos[getRoom(socket)].players).length);
 
-	var playerIndex = turnInfo.player + 1;
-	if (playerIndex >= Object.keys(gameInfos.players).length) {
+	var playerIndex = gameInfos[getRoom(socket)].turnInfo.player + 1;
+	if (playerIndex >= Object.keys(gameInfos[getRoom(socket)].players).length) {
 		playerIndex = 0 ;
 	}
-	turnInfo.player = playerIndex;
-	var nextPlayerIndex = turnInfo.nextPlayer + 1;
-	if (nextPlayerIndex >= Object.keys(gameInfos.players).length) {
+	gameInfos[getRoom(socket)].turnInfo.player = playerIndex;
+	var nextPlayerIndex = gameInfos[getRoom(socket)].turnInfo.nextPlayer + 1;
+	if (nextPlayerIndex >= Object.keys(gameInfos[getRoom(socket)].players).length) {
 		nextPlayerIndex = 0 ;
 	}
-	turnInfo.nextPlayer = nextPlayerIndex;
-	console.log(turnInfo);
+	gameInfos[getRoom(socket)].turnInfo.nextPlayer = nextPlayerIndex;
+	customLog(gameInfos[getRoom(socket)].turnInfo);
 }
 
 function startGame(socket, callback, io) {
-	var socketsIds = Object.keys(gameInfos.players);
-	console.log("turnInfo players " + turnInfo.player);
-	console.log("socket startGame : " + socketsIds[turnInfo.player]);
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	customLog("gameInfos[getRoom(socket)].turnInfo players " + gameInfos[getRoom(socket)].turnInfo.player);
+	customLog("socket startGame : " + socketsIds[gameInfos[getRoom(socket)].turnInfo.player]);
 	startTurn(socket);
-	//socket.to(socketsIds[turnInfo.players]).emit("startGame", null);
 }
-function startTurn(socket, callback) {
-	console.log("Start turn");
-	var socketsIds = Object.keys(gameInfos.players);
+function startTurn(socket) {
+	customLog("Start turn");
+	turnState = "diceCall";
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
 	var turn = {
-		"activPlayer": gameInfos.players[socketsIds[turnInfo.player]],
-		"nextActivePlayer": gameInfos.players[socketsIds[turnInfo.nextPlayer]],
+		"activPlayer": gameInfos[getRoom(socket)].players[socketsIds[gameInfos[getRoom(socket)].turnInfo.player]],
+		"nextActivePlayer": gameInfos[getRoom(socket)].players[socketsIds[gameInfos[getRoom(socket)].turnInfo.nextPlayer]],
 	}
-	io.to("maya_game").emit("startTurn", turn);
-	turnInfo.realDices = getDices(2)
-	if (socketsIds[turnInfo.player] == socket.id) {
-		console.log("activPlayer == socket");
-		socket.emit("dices", turnInfo.realDices);
+	sendToRoom(socket, "startTurn", turn);
+	gameInfos[getRoom(socket)].turnInfo.realDices = getDices(2)
+	if (socketsIds[gameInfos[getRoom(socket)].turnInfo.player] == socket.id) {
+		customLog("activPlayer == socket");
+		socket.emit("dices", gameInfos[getRoom(socket)].turnInfo.realDices);
 	} else {
-		console.log("activPlayer =/= socket");
-		io.to(socketsIds[turnInfo.player]).emit('dices', turnInfo.realDices);
+		customLog("activPlayer =/= socket");
+		io.to(socketsIds[gameInfos[getRoom(socket)].turnInfo.player]).emit('dices', gameInfos[getRoom(socket)].turnInfo.realDices);
 	}
 }
 function getNextPlayerChoice(socket) {
-	var socketsIds = Object.keys(gameInfos.players);
-	if (socketsIds[turnInfo.nextPlayer] == socket.id) {
-		console.log("nextPlayer == socket");
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	if (socketsIds[gameInfos[getRoom(socket)].turnInfo.nextPlayer] == socket.id) {
+		customLog("nextPlayer == socket");
 		socket.emit("takeOrLie");
 	} else {
-		console.log("nextPlayer =/= socket");
-		io.to(socketsIds[turnInfo.nextPlayer]).emit('takeOrLie');
+		customLog("nextPlayer =/= socket");
+		io.to(socketsIds[gameInfos[getRoom(socket)].turnInfo.nextPlayer]).emit('takeOrLie');
 	}
 }
 
 function takeOrLieResolver(socket, choice) {
 	if (choice) { //next player take it
-		changeTurn();
+		changeTurn(socket);
 		startTurn(socket);
 	} else { //next player say lier
-		if (!isSameDices()) { //player lied
-			lied(true);
-			playerDrink();
+		if (!isSameDices(socket)) { //player lied
+			lied(socket, true);
+			playerDrink(socket);
 			startTurn(socket);
 		} else { //player didn't lied
-			lied(false);
-			nextPlayerDrink();
-			changeTurn();
+			lied(socket, false);
+			nextPlayerDrink(socket);
+			changeTurn(socket);
 			startTurn(socket);
 		}
 	}
 }
-function playerDrink() {
-	
-	var socketsIds = Object.keys(gameInfos.players);
-	var sips = sipCalculator(turnInfo.choosenDices);
+function playerDrink(socket) {
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	var sips = sipCalculator(gameInfos[getRoom(socket)].turnInfo.choosenDices);
 	drinks = [{
-		"player": gameInfos.players[socketsIds[turnInfo.player]],
+		"player": gameInfos[getRoom(socket)].players[socketsIds[gameInfos[getRoom(socket)].turnInfo.player]],
 		"sip": sips["sip"],
 		"bottomUp": sips["bottomUp"]
 	}];
-	sendDrinks(drinks);
+	sendDrinks(socket, drinks);
 }
-function nextPlayerDrink() {
-	var socketsIds = Object.keys(gameInfos.players);
-	var sips = sipCalculator(turnInfo.choosenDices, 2);
+function nextPlayerDrink(socket) {
+	var socketsIds = Object.keys(gameInfos[getRoom(socket)].players);
+	var sips = sipCalculator(gameInfos[getRoom(socket)].turnInfo.choosenDices, 2);
 	drinks = [{
-		"player": gameInfos.players[socketsIds[turnInfo.nextPlayer]],
+		"player": gameInfos[getRoom(socket)].players[socketsIds[gameInfos[getRoom(socket)].turnInfo.nextPlayer]],
 		"sip": sips["sip"],
 		"bottomUp": sips["bottomUp"]
 	}];
-	sendDrinks(drinks);
+	sendDrinks(socket, drinks);
 }
-function allDrink() {
+function allDrink(socket) {
 	//TODO 51
-	sendDrinks(drinks);
+	sendDrinks(socket, drinks);
 }
-function sendDrinks(drinks) {
-	io.to("maya_game").emit("drinks", drinks);
+function sendDrinks(socket, drinks) {
+	sendToRoom(socket, "drinks", drinks)
 }
-function isSameDices() {
-	turnInfo.realDices.sort(compare);
-	turnInfo.choosenDices.sort(compare);
-	if(turnInfo.realDices.length != turnInfo.choosenDices.length) {
+function isSameDices(socket) {
+	gameInfos[getRoom(socket)].turnInfo.realDices.sort(compare);
+	gameInfos[getRoom(socket)].turnInfo.choosenDices.sort(compare);
+	if(gameInfos[getRoom(socket)].turnInfo.realDices.length != gameInfos[getRoom(socket)].turnInfo.choosenDices.length) {
 		return false; 
 	} else { 
-   		for(var i = 0; i < turnInfo.realDices.length; i++) {
-   			if(turnInfo.realDices[i] != turnInfo.choosenDices[i]) {
+   		for(var i = 0; i < gameInfos[getRoom(socket)].turnInfo.realDices.length; i++) {
+   			if(gameInfos[getRoom(socket)].turnInfo.realDices[i] != gameInfos[getRoom(socket)].turnInfo.choosenDices[i]) {
    				return false; 
    			}
    		}
@@ -266,8 +316,15 @@ function sipCalculator(dices, coef) {
 		"bottomUp": bottomUp
 	}
 }
-function lied(result) {
-	io.to("maya_game").emit("lied", result);
+function lied(socket, result) {
+	sendToRoom(socket, "lied", result);
+}
+
+/*** UTILS ***/
+function customLog(msg) {
+	if (enableLog) {
+		console.log(msg);
+	}
 }
 /*
 - Lancer les dés
@@ -281,7 +338,7 @@ function lied(result) {
 -- MAYA
 -- 51
 
-socket.to(socketsIds[turnInfo.nextPlayer]).emit("nextActivePlayer");
+socket.to(socketsIds[gameInfos[getRoom(socket)].turnInfo.nextPlayer]).emit("nextActivePlayer");
 */
 
 module.exports = main;

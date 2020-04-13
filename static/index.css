@@ -13,6 +13,11 @@ fieldset {
   margin: auto;
 }
 
+#banner {
+  margin: auto;
+  display: block;
+}
+
 fieldset legend {
   text-transform: capitalize;
   font-variant: small-caps;
