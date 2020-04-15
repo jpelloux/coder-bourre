@@ -8,7 +8,8 @@ var gameInfos = {
     "sockets": [], // ids of players sockets
     "nbReadyPlayers": 0, // increment each time someone get his dices, start game when =players.length
     "turn": 0, // used to tell to clients that it's the turn of players[turn]
-    "dices": [0, 0, 0, 0, 0, 0] // total of each dice value during a round
+    "dices": [0, 0, 0, 0, 0, 0], // total of each dice value during a round
+    "isPalifico": false, // true if the current round is in palifico
 };
 
 function main(io){
@@ -84,21 +85,22 @@ function main(io){
             var numberCalled = parseInt(data.numberCalled);
             if(data.enderType=="menteurButton"){
                 hasWin = false;
-                if(valueCalled!=1){
-                    pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player lose
-                }else{
+                if(valueCalled==1 || gameInfos.isPalifico){
                     pseudo = gameInfos.dices[valueCalled-1]<numberCalled ? data.lastPlayer : data.pseudo;
+                }else{
+                    pseudo = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]<numberCalled ? data.lastPlayer : data.pseudo; //if the sum of the actual number of values called and pacos is less than the call, the last player lose
                 }
             }else if(data.enderType=="toutpileButton"){
-                if(valueCalled!=1){
-                    hasWin = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]==numberCalled;
+                if(valueCalled==1 || gameInfos.isPalifico){
+                     hasWin = gameInfos.dices[valueCalled-1]==numberCalled;
                 }else{
-                    hasWin = gameInfos.dices[valueCalled-1]==numberCalled;
+                    hasWin = gameInfos.dices[valueCalled-1]+gameInfos.dices[0]==numberCalled;
                 }
                 pseudo = data.pseudo;
             }else{
                 throw "id of enderButton is not recognized";
             }
+            gameInfos.isPalifico = false;
             nsp_game.emit('endRound_res', {
                 "endingPlayer":data.pseudo,
                 "enderType": data.enderType,
@@ -112,45 +114,44 @@ function main(io){
             gameInfos.dices=[0, 0, 0, 0, 0, 0];
         });
 
-        // When a player doesn't have dices, updates infos
+        // When a player has lost all his last dice, updates infos
         socket.on('playerLose_req', function(pseudo){
             nsp_game.emit('playerLose_res', pseudo);
             playerLeftManager(gameInfos.players.indexOf(pseudo));
-            gameInfos.turn = (gameInfos.turn + 1) % gameInfos.players.length;
         });
 
         // Relays the information to everyone is the next round will be in palifico
         socket.on('palifico_req', function(){
+            gameInfos.isPalifico=true;
             nsp_game.emit('palifico_res', '');
         });
 
-/*
+
         socket.on('disconnect', function(){
             nsp_game.emit("disconnectedPlayer", gameInfos.players[gameInfos.sockets.indexOf(socket.id)]);
             playerLeftManager(gameInfos.sockets.indexOf(socket.id));
-        });*/
+        });
 
         // Deletes the player and his socket at "index" and manages if there is a palifico or a loser 
         function playerLeftManager(index){
-            if(gameInfos.turn==gameInfos.players.length || gameInfos.turn==gameInfos.players.length-1){
-                            gameInfos.turn--;
-                        }
             gameInfos.players.splice(index, 1);
-            var s = gameInfos.sockets.splice(index, 1);
+            gameInfos.sockets.splice(index, 1);
+            gameInfos.turn %= gameInfos.players.length;
+
             nsp_game.emit('updatePlayersList', gameInfos.players);
             if(gameInfos.players.length==1){
                 nsp_game.emit('youWin', gameInfos.players[0]);
+                //empecher de f5 sinon reco
                 initializeData();
             }else if(gameInfos.players.length<=2){
                 nsp_game.emit('forbidToutpile', '');
             }
-            console.log("coin", index, gameInfos.turn)
-            if(index==gameInfos.turn){
-               /* var indexIdLastSocket = Math.abs((index-1)%gameInfos.players.length);
+            /*if(index==gameInfos.turn){
+                var indexIdLastSocket = Math.abs((index-1)%gameInfos.players.length);
                 console.log(index, indexIdLastSocket)
-                nsp_game.emit('getLastCall_req', gameInfos.sockets[indexIdLastSocket])*/
+                nsp_game.emit('getLastCall_req', gameInfos.sockets[indexIdLastSocket])
                 //nextPlayer();
-            }
+            }*/
             
         }
 
