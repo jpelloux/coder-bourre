@@ -1,7 +1,7 @@
 var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
-var nbDice = 5;
+var nbDice = 2;
 var myPalificoHappenned = false;
 var palificoRound = false;
 var useToutpile = true;
@@ -166,12 +166,7 @@ function valuePressed(id){
     socket.emit('callMade_req', {"pseudo":pseudo, "numberCalled":id.toString().split("_")[2], "valueCalled":id.toString().split("_")[1] });
 }
 
-socket.on('getLastCall_req', function(player, fn){
-    if(player==pseudo){
-        console.log("moi !!");
-        emit('getLastCall_res', savedCall);
-    }
-})
+
 
 
 
@@ -305,10 +300,23 @@ socket.on('youWin', function(player){
 
 // Displays when a player disconnected
 socket.on('disconnectedPlayer', function(player){
-    $('#othersCalls').append('<p>' + player + ' s\'est déconnecté' + '</p>');
+    if(player != null){
+        $('#othersCalls').append('<p>' + player + ' s\'est déconnecté' + '</p>');
+    }else{
+        $('#othersCalls').append('<p>' + 'Un problème est survenu' + '</p>');
+    }
+    $('#othersCalls').append('<p>' + 'Round annulé, relancez vos dés' + '</p>');
+    document.getElementById('whosTurn').innerHTML = 'FIN DE LA MANCHE, RELANCEZ VOS DÉS !';
+    $('#getDices_button').prop('disabled', false);
 });
 
 function redirectToHomePage()
 {
    window.location.href = "/";
+}
+
+function test(){
+    socket.emit("test", function(res){
+        console.log(res);
+    })
 }

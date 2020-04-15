@@ -42,9 +42,6 @@ function main(io){
 
         // When a player starts the game, generates a random first player and allows everybody to get dices
         socket.on('dispGame_req', function(){
-            if(gameInfos.players.length<=2){ // toutpile is forbidden when there are only two players
-                nsp_game.emit('forbidToutpile', '');
-            }
             gameInfos.turn = Math.floor(Math.random() * gameInfos.players.length);
             nsp_game.emit('dispGame_res', '');
         });
@@ -54,6 +51,9 @@ function main(io){
             fn(getDices(nbDice));
             gameInfos.nbReadyPlayers++;
             if (gameInfos.nbReadyPlayers == gameInfos.players.length){
+                /*if(gameInfos.players.length<=2){ // toutpile is forbidden when there are only two players
+                    nsp_game.emit('forbidToutpile', '');
+                }*/
                 nsp_game.emit('startGame', gameInfos.players[gameInfos.turn]);
             }
         });
@@ -136,28 +136,25 @@ function main(io){
         function playerLeftManager(index){
             gameInfos.players.splice(index, 1);
             gameInfos.sockets.splice(index, 1);
-            gameInfos.turn %= gameInfos.players.length;
-
+            setGameInfos(
+                gameInfos.players,
+                gameInfos.sockets, 
+                0, 
+                gameInfos.turn % gameInfos.players.length, 
+                [0, 0, 0, 0, 0, 0], 
+                false
+            );
             nsp_game.emit('updatePlayersList', gameInfos.players);
             if(gameInfos.players.length==1){
                 nsp_game.emit('youWin', gameInfos.players[0]);
-                //empecher de f5 sinon reco
-                initializeData();
+                // TODO : empecher de f5 sinon reco
+                setGameInfos([], [], 0, 0, [0, 0, 0, 0, 0, 0], false); //reset gameInfos
             }else if(gameInfos.players.length<=2){
                 nsp_game.emit('forbidToutpile', '');
             }
-            /*if(index==gameInfos.turn){
-                var indexIdLastSocket = Math.abs((index-1)%gameInfos.players.length);
-                console.log(index, indexIdLastSocket)
-                nsp_game.emit('getLastCall_req', gameInfos.sockets[indexIdLastSocket])
-                //nextPlayer();
-            }*/
             
         }
 
-        socket.on('getLastCall_res', function(call){
-            console.log(call)
-        })
 
         // Pass the turn to the next player to make a call (used when a player is disconnected). Call is the same that in 'callMade_req'
         function nextPlayer(call){
@@ -168,14 +165,19 @@ function main(io){
                 "valueCalled":call.valueCalled });
         }
 
-        function initializeData(){
-            gameInfos.players= [];
-            gameInfos.sockets= [];
-            gameInfos.nbReadyPlayers= 0;
-            gameInfos.turn= 0;
-            gameInfos.dices= [0, 0, 0, 0, 0, 0];
+        function setGameInfos(p, s, nrp, t, d, isP){
+            gameInfos.players= p;
+            gameInfos.sockets= s;
+            gameInfos.nbReadyPlayers= nrp;
+            gameInfos.turn= t;
+            gameInfos.dices= d;
+            gameInfos.isPalifico= isP;
         }
 
+
+        socket.on('test', function(fn){
+            fn(gameInfos)
+        })
     })
 
     router.get('/home', function(req, res){  
