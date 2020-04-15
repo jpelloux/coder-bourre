@@ -68,6 +68,6 @@ if __name__=="__main__":
 	print(os.listdir())
 	bot=Bot()
 	key = ''
-	with open('bots/discord_key') as f:
+	with open('discord_key') as f:
 		key = f.read()
 	bot.run(key)
