@@ -1,0 +1,68 @@
+body {
+    background-color: chartreuse;
+  }
+  
+  #content{
+    text-align: center;
+    display: none;
+  }
+  #dices_area{
+    height: 100px;
+  }
+  /*#dices{
+      font-size: 40px;
+  }*/
+  
+  #calls{
+    width: 100%;
+    border: 1px solid black;
+  }
+
+  #titles{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  } 
+
+  #othersCallsTitle{
+      width: 20%;
+      border-right: 1px solid black;
+  }
+
+  #myCallTitle{
+    flex:1;
+}
+
+  #announces{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  } 
+
+#othersCalls{
+    width: 20%;
+    border-right: 1px solid black;
+
+}
+
+  #myCall{
+    flex:1;
+    display: flex;
+    flex-direction: row;
+    font-size: 40px;
+}
+
+#buttons{
+ text-align: center;
+ width: 30%;
+}
+
+  #numberBet{
+    padding-right: 20px;
+    flex:1;
+  }
+
+  #valueBet{
+    padding-left: 20px;
+
+  }

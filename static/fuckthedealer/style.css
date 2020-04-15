@@ -16,12 +16,16 @@ body
     border-right: 1px solid black;
 	text-align: center;
 	width: 7.69%; /* 100% / 13 cartes */
+	height: 17%;;
 
 }
 .tableCards td img
 {
-	display: none;
 	width: 20px;
+}
+.cardHeader td
+{
+	height:15% !important;
 }
 h1
 {

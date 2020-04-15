@@ -10,6 +10,7 @@ var io = require('socket.io').listen(server);
 
 var gameRouter = require("./routes/game");
 var ftdRouter = require("./routes/fuckthedealer");
+var pacoRouter = require ("./routes/paco");
 var mayaRouter = require("./routes/maya");
 
 //share socket.io between app
@@ -22,6 +23,7 @@ app.get('/', function(request, response) {
 });
 
 app.use("/game", gameRouter);
+app.use("/paco", pacoRouter(io));
 app.use("/maya", mayaRouter(io));
 app.use("/fuckthedealer", ftdRouter(io));
 

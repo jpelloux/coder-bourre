@@ -6,28 +6,31 @@
     </head>
  
     <body>
-
-        <h1>JOUONS AU MAYA</h1>
-
-        <form method="get" id="formulary">
+		<fieldset class="game"> 
+			<legend>JOUONS AU MAYA</legend>
+			<form method="get" id="connect">
             <label for="pseudo">Pseudo:
-                <input type="text" id="pseudo" name="pseudo" autofocus />
+                <input type="text" id="pseudo" name="pseudo" autofocus required />
             </label>
-            <input type="submit" id='playing_request' value="Rejoindre la partie" />
             
+            <div id=rooms>
+            	<p>Veuillez choisir un salon :</p>
+           		<div id="rooms_list">
+           		</div>
+           		<input type="radio" id="newRoom" name="room" value="newRoom" class="room" required><label for="newRoom">Nouveau salon</label><br>
+  				
+  				<div id="newRoomDiv">
+            		<label for="newRoomName">Nom du salon:
+            		    <input type="text" id="newRoomName" name="newRoomName" autofocus />
+            		</label>
+        		</div>
+       		</div>
+       		<br>	
+            <input type="submit" id='playing_request' value="Rejoindre la partie" />
         </form>
+		</fieldset>
 
-        <input type="button" disabled="true" id="game_starter" value="Démarrer le jeu"/>
-
-        <section id="text_area"></section>
-
-        <div id="players">
-            <table id="players_tables">
-                <tr>
-                </tr>
-            </table>
-        </div>
-
+        
         <script src="/socket.io/socket.io.js"></script>
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
         <script type="text/javascript" src="/static/maya/maya_home.js"></script>
