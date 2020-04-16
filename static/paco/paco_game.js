@@ -1,7 +1,7 @@
 var socket = io('/game');
 
 var pseudo = sessionStorage.getItem('pseudo');
-var nbDice = 2;
+var nbDice = 5;
 var myPalificoHappenned = false;
 var palificoRound = false;
 var useToutpile = true;
@@ -26,23 +26,30 @@ socket.on("updatePlayersList", function(players){
 function dispPlayersNames(namesTab){
     var str = "";
     namesTab.forEach(el => {
-        str += el + ', '
+        str += '<img id="player_pict" src="/static/img/utils/player.jpg"></img>' + el;
     });
-    str = str.substring(0, str.length - 2);
-    document.getElementById('playersName').innerHTML= pseudo + "<br>Joueurs présents: " + str;
+    document.getElementById('players_content').innerHTML= str;
 }
 
-// Displays and starts the game when someone press the starter button
+// Allows to throw dices when someone press the starter button
 $('#start_button').click(function(){
     socket.emit('dispGame_req', '');
 });
 socket.on("dispGame_res", function(){
-    document.getElementById('start_button').style.display = "contents";
-    document.getElementById('content').style.display = "contents";
+    dispStatus('La partie commence, lancez vos dés !')
+    dispDices('<input type="button" id="getDices_button" onClick="getDices_buttonClicked()" value="Lancer les dés" />');
 });
 
 
-
+function getDices_buttonClicked(){
+    socket.emit('getDices_req', nbDice, function(dices){
+        var str = "";
+        dices.forEach(val => {
+            str += '<img src=\"/static/images/dice_' + val + '.png\">'
+        });
+        dispDices(str);
+    });
+}
 
 
 
@@ -54,14 +61,7 @@ socket.on("dispGame_res", function(){
 
 // Asks and receives the values of dices from the server, and displays the dices
 $('#getDices_button').click(function(){
-    socket.emit('getDices_req', nbDice, function(dices){
-        var str = "";
-        dices.forEach(val => {
-            str += '<img src=\"/static/images/dice_' + val + '.png\">'
-        });
-        document.getElementById('dices').innerHTML = str;
-    });
-    $('#getDices_button').prop('disabled', true);
+    getDices_buttonClicked();
 });
 
 
@@ -77,10 +77,10 @@ $('#getDices_button').click(function(){
 
 // listen to the event fired by the server when everybody asked for his dices
 socket.on('startGame', function(player){
-    document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ player.toUpperCase();
-    document.getElementById('othersCalls').innerHTML = '';
+    dispStatus('C\'EST AU TOUR DE '+ player.toUpperCase());
+    document.getElementById('infos_content').innerHTML = '';
     if(player!=pseudo){
-        document.getElementById('numberBet').innerHTML = '';
+        document.getElementById('call_content').innerHTML = '';
     }
     else{
         dispPossibleCalls('');
@@ -98,11 +98,11 @@ socket.on('startGame', function(player){
 socket.on('callMade_res', function(data){
     savedCall.numberCalled = data.numberCalled;
     savedCall.valueCalled = data.valueCalled;
-    $('#othersCalls').append('<p>' + data.lastPlayer + ' annonce ' + data.numberCalled + ' ' + data.valueCalled + '</p>');
+    dispInfo(data.lastPlayer + ' annonce ' + data.numberCalled + ' ' + data.valueCalled)
     var call = data.numberCalled + '_' + data.valueCalled;
-    document.getElementById('whosTurn').innerHTML = 'C\'EST AU TOUR DE '+ data.nextPlayer.toUpperCase();
+    dispStatus('C\'EST AU TOUR DE '+ data.nextPlayer.toUpperCase());
     if(data.nextPlayer!=pseudo){
-        document.getElementById('numberBet').innerHTML = '';
+        document.getElementById('call_content').innerHTML = '';
         document.getElementById('enders_buttons').innerHTML = '';
         $('#menteurButton').prop('disabled', false);
         $('#toutpileButton').prop('disabled', false);
@@ -158,7 +158,7 @@ function dispPossibleCalls(call){
         values += '<img src=\"/static/images/dice_' + i + '.png\">'
         values += '</p>\n'
     }
-    document.getElementById('numberBet').innerHTML = values;
+    document.getElementById('call_content').innerHTML = values;
 }
 
 // fonction called when a call is made
@@ -177,21 +177,21 @@ function valuePressed(id){
  * THE FOLLOWING SOCKETS AND FONCTIONS MANAGE THE PRESSURE ON AN ENDER BUTTON (MENTEUR & TOUTPILE)  *
 *****************************************************************************************************/
 
-// This event is fired when there are less than two players
+// This event is fired when there are two players or less
 socket.on('forbidToutpile', function(){
     useToutpile = false;
 })
 
 // Generates the html code that allows to end the game by calling "menteur" or "toutpile"
 function dispEndersButtons(lastPlayer, call){
-    var values = '<p>';
-    values += '<button id="menteurButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">MENTEUR !</button>';
+    var str = '<p>';
+    str += '<button id="menteurButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">MENTEUR !</button>';
     if(useToutpile){
-        values += '<p></p>';
-        values += '<button id="toutpileButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">TOUT PILE</button>';
+        str += '<p></p>';
+        str += '<button id="toutpileButton" onClick="enderButtonPressed(this.id, \'' + call + '\', \'' + lastPlayer + '\')">TOUT PILE</button>';
     }
-    values += '</p>';
-    document.getElementById('enders_buttons').innerHTML = values;
+    str += '</p>';
+    document.getElementById('enders_buttons').innerHTML = str;
 }
 
 function enderButtonPressed(enderType, lastCall, lastPlayer){
@@ -231,16 +231,16 @@ socket.on('endRound_res',function(data){
     if(pseudo == data.pseudo){
         updateNbDices(data.hasWin);
     }
-    $('#getDices_button').prop('disabled', false);
+    dispDices('<input type="button" id="getDices_button" onClick="getDices_buttonClicked()" value="Lancer les dés" />');
 });
 
 
 // Displays the differents infos after the end of the round ("data" is the same that in 'endRound_res')
 function dispEndGame(data){
-    document.getElementById('whosTurn').innerHTML = 'FIN DE LA MANCHE, RELANCEZ VOS DÉS !';
+    dispStatus('FIN DE LA MANCHE, RELANCEZ VOS DÉS !');
     //display who ended the game and how
     var enderType = data.enderType=="menteurButton" ? "menteur !" : "tout pile !";
-    $('#othersCalls').append('<p>' + data.endingPlayer + ' annonce ' + enderType + '</p>');
+    dispInfo(data.endingPlayer + ' annonce ' + enderType);
     //display the total number of each dice value
     var str = ["paco(s)", "deux", "trois", "quatre", "cinq", "six"];
     var totalDicesStr = '<p style="text-align:left">Il y avait :<br>';
@@ -249,10 +249,10 @@ function dispEndGame(data){
         totalDicesStr+= '<li>' + data.dices[i] + ' ' + str[i] + '</li>';
     }
     totalDicesStr    += '</ul></p>';
-    $('#othersCalls').append(totalDicesStr);
+    dispInfo(totalDicesStr);
     //display who will lose or win a dice
     var res = data.hasWin?"gagne":"perd";
-    $('#othersCalls').append('<p>' + data.pseudo + ' ' + res + ' ' + "un dé !" + '</p>');
+    dispInfo(data.pseudo + ' ' + res + ' ' + "un dé !");
 }
 
 // Updates the number of dices after the end of a round, end fired the palifico end playerLose events
@@ -268,7 +268,7 @@ function updateNbDices(hasWin){
         var strloser ='';
         strloser += '<p>T\'as perdu gros nul !</p>'
         strloser += '<p><input type="button" onClick="redirectToHomePage()" value="Retourner au menu" /></p>'
-        document.getElementById('dices_area').innerHTML = strloser;
+        dispStatus(strloser);
     }else if(!myPalificoHappenned && nbDice==1){ //palifico (triggered only once per player)
         socket.emit('palifico_req', '');
         myPalificoHappenned = true;
@@ -277,23 +277,23 @@ function updateNbDices(hasWin){
 
 // Provides a palifico round when necessary
 socket.on('palifico_res',function(){
-    $('#othersCalls').append('<p>Palifico !</p>');
+    dispInfo('Palifico !');
     palificoRound=true;
 });
 
 // Displays when a player have lost
 socket.on('playerLose_res',function(deadPlayer){
-    $('#othersCalls').append('<p>' + deadPlayer + ' est mort !' + '</p>');
+    dispInfo(deadPlayer + ' est mort !');
 });
 
 // Displays when a player have won
 socket.on('youWin', function(player){
-    $('#othersCalls').append('<p>' + 'Et c\'est une victoire pour ' + player + ' !</p>');
+    dispInfo('Et c\'est une victoire pour ' + player);
     if(player==pseudo){
         var strWinner ='';
         strWinner += '<p>Victoire, wouhou sec pour tout le monde !</p>'
         strWinner += '<p><input type="button" onClick="redirectToHomePage()" value="Retourner au menu" /></p>'
-        document.getElementById('dices_area').innerHTML = strWinner;
+        dispStatus(strWinner);
     }
 });
 
@@ -301,18 +301,31 @@ socket.on('youWin', function(player){
 // Displays when a player disconnected
 socket.on('disconnectedPlayer', function(player){
     if(player != null){
-        $('#othersCalls').append('<p>' + player + ' s\'est déconnecté' + '</p>');
+        dispInfo(player + ' s\'est déconnecté');
     }else{
-        $('#othersCalls').append('<p>' + 'Un problème est survenu' + '</p>');
+        dispInfo('Un problème est survenu');
     }
-    $('#othersCalls').append('<p>' + 'Round annulé, relancez vos dés' + '</p>');
-    document.getElementById('whosTurn').innerHTML = 'FIN DE LA MANCHE, RELANCEZ VOS DÉS !';
-    $('#getDices_button').prop('disabled', false);
+    dispInfo('Round annulé, relancez vos dés');
+    dispStatus('FIN DE LA MANCHE, RELANCEZ VOS DÉS !');
+    dispDices('<input type="button" id="getDices_button" onClick="getDices_buttonClicked()" value="Lancer les dés" />');
 });
 
 function redirectToHomePage()
 {
    window.location.href = "/";
+}
+
+
+function dispInfo(info){
+    $('#infos_content').append('<p>' + info + '</p>');
+}
+
+function dispStatus(status){
+    document.getElementById('gameStatus_content').innerHTML = status;
+}
+
+function dispDices(str){
+    document.getElementById('dices_content').innerHTML = str;
 }
 
 function test(){

@@ -51,9 +51,9 @@ function main(io){
             fn(getDices(nbDice));
             gameInfos.nbReadyPlayers++;
             if (gameInfos.nbReadyPlayers == gameInfos.players.length){
-                /*if(gameInfos.players.length<=2){ // toutpile is forbidden when there are only two players
+                if(gameInfos.players.length<=2){ // toutpile is forbidden when there are only two players
                     nsp_game.emit('forbidToutpile', '');
-                }*/
+                }
                 nsp_game.emit('startGame', gameInfos.players[gameInfos.turn]);
             }
         });
@@ -109,9 +109,14 @@ function main(io){
                 "dices": gameInfos.dices
             });
             //initialize informations for next round
-            gameInfos.nbReadyPlayers=0;
-            gameInfos.turn=gameInfos.players.indexOf(pseudo);
-            gameInfos.dices=[0, 0, 0, 0, 0, 0];
+            setGameInfos(
+                gameInfos.players, //unchanged
+                gameInfos.sockets, //unchanged
+                0,
+                gameInfos.players.indexOf(pseudo),
+                [0, 0, 0, 0, 0, 0],
+                gameInfos.isPalifico //unchanged
+            );
         });
 
         // When a player has lost all his last dice, updates infos
