@@ -3,6 +3,7 @@ from discord.ext import commands
 import time
 import asyncio
 import os,random
+import sys
 
 class Bot(discord.Client):
 	tabWord={'cheh','honteux','kaamelott','suce','baise','wizz','vinjo', '_con', 'picole', 'monique'}
@@ -21,43 +22,48 @@ class Bot(discord.Client):
 		
 		if (message.author==self.user):
 			return
-
-		words=[ x for x in self.tabWord if x in message.content.lower() ]
-		if words:
-			for i in words:
-				if i == 'kaamelott':
-					user=message.author
-					voice_channel=user.voice.channel
-					channel=None
-					if voice_channel!= None:
-						channel=voice_channel.name
-						path='sounds/kaamelott/'
-						randomFile=random.choice(os.listdir(path))
+		try:
+			words=[ x for x in self.tabWord if x in message.content.lower() ]
+			if words:
+				user=message.author
+				voice_channel=user.voice.channel
+				channel=None
+				if voice_channel!= None:
+					channel=voice_channel.name
+					try:
 						vc= await voice_channel.connect()
-						player = vc.play(discord.FFmpegPCMAudio(path+randomFile), after=lambda e: print('done', e))
-						while vc.is_playing():
-							await asyncio.sleep(1)
-						vc.stop()
-						await vc.disconnect()
-					else:
-						await bot.say('User is not in a channel.')
+					except discord.errors.ClientException as ec:
+						log(ec)
 
+					for i in words:
+						if i == 'kaamelott':
+								path='sounds/kaamelott/'
+								randomFile=random.choice(os.listdir(path))
+								player = vc.play(discord.FFmpegPCMAudio(path+randomFile), after=lambda e: print('done', e))
+								while vc.is_playing():
+									await asyncio.sleep(1)
+								vc.stop()
+						else:
+							if os.path.isfile("gifs/"+i+".gif"):
+								await message.channel.send(file=discord.File("gifs/"+i+".gif"))
+								
+							player = vc.play(discord.FFmpegPCMAudio('sounds/'+i+'.mp3'), after=lambda e: print('done', e))
+							while vc.is_playing():
+								await asyncio.sleep(1)
+							vc.stop()
+					await message.channel.send('fin du for')
+					await vc.disconnect()
 				else:
-					if os.path.isfile("gifs/"+i+".gif"):
-						await message.channel.send(file=discord.File("gifs/"+i+".gif"))
-					user=message.author
-					voice_channel=user.voice.channel
-					channel=None
-					if voice_channel!= None:
-						channel=voice_channel.name
-						vc= await voice_channel.connect()
-						player = vc.play(discord.FFmpegPCMAudio('sounds/'+i+'.mp3'), after=lambda e: print('done', e))
-						while vc.is_playing():
-							await asyncio.sleep(1)
-						vc.stop()
-						await vc.disconnect()
-					else:
-						await bot.say('User is not in a channel.')
+					await bot.say('User is not in a channel.')
+		except Exception as e :
+			log(e)
+			
+
+	
+def log(e):
+	print('erreur service',e)
+	sys.stdout.flush()
+
 
 
 
@@ -65,7 +71,6 @@ class Bot(discord.Client):
 
 
 if __name__=="__main__":
-	print(os.listdir())
 	bot=Bot()
 	key = ''
 	with open('discord_key') as f:
