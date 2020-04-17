@@ -5,7 +5,7 @@ import asyncio
 import os,random
 
 class Bot(discord.Client):
-	tabWord={'cheh','honteux','kaamelott','suce','baise','wizz','vinjo'}
+	tabWord={'cheh','honteux','kaamelott','suce','baise','wizz','vinjo', '_con', 'picole', 'monique'}
 	def __init__(self):
 		super().__init__()
 		
