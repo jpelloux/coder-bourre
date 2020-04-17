@@ -1,0 +1,151 @@
+<html>
+<head>
+	<title>Fuck ze dealer</title>
+	<link href="/static/fuckthedealer/style.css" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<script src="/static/jquery.min.js"></script>
+</head>
+<body>
+	<div id="home">
+		<div id="pseudoInput">
+			<label for="playerName">Surnom : </label>
+			<input type="text" id="playerName" name="playerName"/>
+			<button id="connectionButton" onclick="playerConnection()">Rejoindre</button>
+		</div>
+		<div id="pregameLobby">
+			<label for="roomName">Nom de la partie : </label>
+			<input type="text" id="roomName" name="roomName"/>
+			<br/>
+			<br/>
+			<div id="waitingPlayers">
+				<h3>En attente de joueurs ..</h3>
+				<div id="playerList">
+					<ul></ul>
+				</div>
+			</div>
+			<p>Qui commence dealer ?</p>
+			<div>
+				<input type="radio" id="radioBtnMe" name="dealerChoice" value="player" checked>
+				<label for="radioBtnMe">Moi</label>
+			  </div>
+			  <div>
+				<input type="radio" id="radioBtnRandom" name="dealerChoice" value="random">
+				<label for="radioBtnRandom">Aléatoire</label>
+			  </div>
+			  <br/>
+			<p>Qui devient dealer après trois erreurs ?</p>
+			<div>
+				<input type="radio" id="radioBtnNextDealerNextPlayer" name="nextDealerChoice" value="nextPlayer">
+				<label for="radioBtnNextDealerNextPlayer">Le joueur à droite du dealer</label>
+			  </div>
+			  <div>
+				<input type="radio" id="radioBtnNextDealerPlayerFailed" name="nextDealerChoice" value="playerThatFailed" checked>
+				<label for="radioBtnNextDealerPlayerFailed">Le joueur qui fait la troisième erreur d'affilée</label>
+			  </div>
+			  <br/>
+			<button id="newRoomButton" onclick="createRoom()">Creer la partie</button>
+			<button id="newGameButton" onclick="startGame()">Lancer la partie !</button>
+		</div>
+		<div id="activeGamesContainer">
+			<div id="activeGames"></div>
+			<button id="createGameButton" onclick="displayNewRoomHTML()">Creer une nouvelle partie</button>
+		</div>
+	</div>
+	<div id="game">
+		<div>
+			<table class=" gamePlayerList">
+				<tr id="gamePlayerList">
+				</tr>
+			</table>
+			<table class="tableCards">
+				<tr class="cardHeader">
+					<td id="header-2">2</td>
+					<td id="header-3">3</td>
+					<td id="header-4">4</td>
+					<td id="header-5">5</td>
+					<td id="header-6">6</td>
+					<td id="header-7">7</td>
+					<td id="header-8">8</td>
+					<td id="header-9">9</td>
+					<td id="header-10">10</td>
+					<td id="header-V">V</td>
+					<td id="header-D">D</td>
+					<td id="header-R">R</td>
+					<td id="header-A">A</td>
+				</tr>
+				<tr>
+					<td id="CARREAU-2"></td>
+					<td id="CARREAU-3"></td>
+					<td id="CARREAU-4"></td>
+					<td id="CARREAU-5"></td>
+					<td id="CARREAU-6"></td>
+					<td id="CARREAU-7"></td>
+					<td id="CARREAU-8"></td>
+					<td id="CARREAU-9"></td>
+					<td id="CARREAU-10"></td>
+					<td id="CARREAU-V"></td>
+					<td id="CARREAU-D"></td>
+					<td id="CARREAU-R"></td>
+					<td id="CARREAU-A"></td>
+				</tr>
+				<tr>
+					<td id="PIQUE-2"></td>
+					<td id="PIQUE-3"></td>
+					<td id="PIQUE-4"></td>
+					<td id="PIQUE-5"></td>
+					<td id="PIQUE-6"></td>
+					<td id="PIQUE-7"></td>
+					<td id="PIQUE-8"></td>
+					<td id="PIQUE-9"></td>
+					<td id="PIQUE-10"></td>
+					<td id="PIQUE-V"></td>
+					<td id="PIQUE-D"></td>
+					<td id="PIQUE-R"></td>
+					<td id="PIQUE-A"></td>
+				</tr>
+				<tr>
+					<td id="COEUR-2"></td>
+					<td id="COEUR-3"></td>
+					<td id="COEUR-4"></td>
+					<td id="COEUR-5"></td>
+					<td id="COEUR-6"></td>
+					<td id="COEUR-7"></td>
+					<td id="COEUR-8"></td>
+					<td id="COEUR-9"></td>
+					<td id="COEUR-10"></td>
+					<td id="COEUR-V"></td>
+					<td id="COEUR-D"></td>
+					<td id="COEUR-R"></td>
+					<td id="COEUR-A"></td>
+				</tr>
+				<tr>
+					<td id="TREFLE-2"></td>
+					<td id="TREFLE-3"></td>
+					<td id="TREFLE-4"></td>
+					<td id="TREFLE-5"></td>
+					<td id="TREFLE-6"></td>
+					<td id="TREFLE-7"></td>
+					<td id="TREFLE-8"></td>
+					<td id="TREFLE-9"></td>
+					<td id="TREFLE-10"></td>
+					<td id="TREFLE-V"></td>
+					<td id="TREFLE-D"></td>
+					<td id="TREFLE-R"></td>
+					<td id="TREFLE-A"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="dealer">
+			<div id="card">
+				<img id="cardImg" ></img>
+				<!-- src="/static/fuckthedealer/img/cartes/dos.jpg" -->
+			</div>
+			<button id="found" onclick="found()">Ce con a trouvé la carte</button>
+			<button id="notFound" onclick="notFound()">Ce con picole</button>
+		</div>
+	</div>
+	
+	
+</body>
+<script src="/static/fuckthedealer/script.js"></script>
+</html>

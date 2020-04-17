@@ -31,16 +31,30 @@ h1
 {
 	text-align: center;
 }
+#activeGamesContainer
+{
+	display:none;
+}
 #pregameLobby
 {
+	display: none;
 	margin: auto;
 	padding: 15px;
 	width: 33%;
 	border: solid 1px black;
 }
+#waitingPlayers
+{
+	display:none;
+}
 #playerList
 {
 	border: solid 1px black;
+}
+.gameRoom
+{
+	border: solid 1px black;
+	margin: 10px;
 }
 #game
 {

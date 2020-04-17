@@ -9,6 +9,31 @@ var currentCard ;
 var errorCount;
 var isNextDealerChoiceIsNextPlayer;
 var removedCards;
+//TODO : Add flag for active game
+/**
+ * var rooms = {
+	"room1": {
+		name:"Partie de Un",
+		owner:"fdshfd",
+		players: {
+			"fdshfd": "Un",
+			"poiu": "Deux",
+			"dmslkjdsdfjk": "Trois"
+		}
+	},
+	"room2": {
+		name:"Partie de One",
+		owner:"fdmoiljfd",
+		players: {
+			"fdmoiljfd": "One",
+			"mldskfdfj": "Two",
+			"fklmdsjfe": "Three"
+		}
+	}
+}
+ */
+
+var rooms = {}
 
 function main(io)
 {
@@ -16,49 +41,121 @@ function main(io)
 		console.log("FTD connection handling", socket.id);
 
 		socket.on("playerconnection", function(data, callback){
-			console.log("Player connection : ", data.name);
-
-			players[socket.id] = data.name ; 
 			
-			console.log("List of player now : ", Object.values(players));
-			socket.broadcast.emit("playerupdate", Object.values(players));
-			callback(Object.values(players));
+			console.log("Player connection : ", data.name);
+			callback(getPlayersbyRooms());
+		});
+
+		socket.on("newroom", function(data){
+			//TODO : Disconnect from previous room
+			var roomId = "room" + data.name.replace(/ /g, "");
+			var s_id = socket.id;
+			rooms[roomId] = {
+				name: data.name,
+				owner:socket.id,
+				players: {
+					[s_id]:data.by
+				}
+			}
+			console.log("Room created : ", rooms[roomId]);
+			io.emit("updaterooms", getPlayersbyRooms());
+		});
+
+		socket.on("joinroom", function(data, callback){
+			//check if owner of a room
+			for(var i in rooms)
+			{
+				if(rooms[i].owner === socket.id)
+				{
+					callback({"ok":false, "reason":"owner"});
+					return;
+				}
+			}
+			//Duplicate code with deleteroom
+			//Remove from previous room
+			for(var i in rooms){
+				delete rooms[i].players[socket.id]
+			}
+			rooms[data.id].players[socket.id] = data.name
+			io.emit("updaterooms", getPlayersbyRooms());
+			callback({"ok":true});
+		});
+
+		socket.on("deleteroom", function(data){
+			for (var i in rooms)
+			{
+				if(rooms[i].owner === socket.id)
+				{
+					delete rooms[i];
+				}
+			}
+			//Duplicate code from joinroom
+			//Remove from previous room
+			for(var i in rooms){
+				delete rooms[i].players[socket.id]
+			}
+			//Add in the new one
+			rooms[data.id].players[socket.id] = data.name
+			io.emit("updaterooms", getPlayersbyRooms());
 		});
 		
 		socket.on("disconnect", function () {
-			console.log("Disconnect from : ", players[socket.id]);
-			delete players[socket.id];
+			console.log("A player as disconnected")
+			for (var i in rooms)
+			{
+				if(rooms[i].owner === socket.id)
+				{
+					delete rooms[i];
+				}
+			}
+			//Remove from previous room
+			for(var i in rooms){
+				delete rooms[i].players[socket.id]
+			}
+			io.emit("updaterooms", getPlayersbyRooms());
 		});
-	
-		socket.on("newgame", function(clientData, callback){
-			cards = generateAllCards();
-			removedCards = [];
-			var playersName = Object.values(players);
-			var ids = Object.keys(players);
-			playersCount = playersName.length ; 
-			errorCount = 0;
-			if (clientData.dealerChoice === "player") {
-				dealerIndex = ids.indexOf(socket.id);
+
+		socket.on("startgame", function(clientData){
+			for(var i in rooms)
+			{
+				if (rooms[i].owner === socket.id)
+				{
+					var ids = Object.keys(rooms[i].players);
+					var names = Object.values(rooms[i].players);
+					rooms[i].playersCount = ids.length
+					rooms[i].cards = generateAllCards();
+					rooms[i].currentCard = null;
+					rooms[i].removedCards = [];
+					rooms[i].errorCount = 0;
+					rooms[i].isNextDealerChoiceIsNextPlayer = clientData.nextDealerChoice === "nextPlayer";
+					
+					if (clientData.dealerChoice === "player") {
+						rooms[i].dealerIndex = ids.indexOf(socket.id);
+					}
+					else {
+						rooms[i].dealerIndex = Math.floor(Math.random() * rooms[i].playersCount)
+					}
+					rooms[i].nextPlayerIndex = (rooms[i].dealerIndex + 1) % rooms[i].playersCount;
+					console.log("Starting game : ", rooms[i]);
+					var ret = {
+						players:names,
+						dealer:names[rooms[i].dealerIndex],
+						nextPlayer:names[rooms[i].nextPlayerIndex]
+					}
+					for(var s_id in rooms[i].players)
+					{
+						io.to(s_id).emit("gamestarted", ret);
+					}
+					var c = getCard(rooms[i]);
+					io.to(ids[rooms[i].dealerIndex]).emit("cardreceive", c)
+					
+				}
 			}
-			else {
-				dealerIndex = Math.floor(Math.random() * playersCount)
-			}
-			isNextDealerChoiceIsNextPlayer = clientData.nextDealerChoice === "nextPlayer" ;
-			nextPlayerIndex = (dealerIndex + 1) % playersCount;
-			var data = {
-				players: playersName,
-				dealer:playersName[dealerIndex],
-				nextPlayer:playersName[nextPlayerIndex]
-			};
-			console.log("New game : " + JSON.stringify(data));
-			io.emit("newgamecreated", data);
-			var c = getCard();
-			io.to(ids[dealerIndex]).emit("cardreceive", c)
-			
 		});
 
 		//Update from dealer when clicking on found/notFound
 		socket.on("clientupdate", function(data, callback){
+			var room = getRoomFromPlayerId(socket.id);
 			var ret = {
 				newDisplayedCard: null,
 				isLastCardFromFamily: null,
@@ -66,57 +163,82 @@ function main(io)
 				nextDealer: null,
 				nextPlayer: null
 			}
-			var ids = Object.keys(players);
-			var names = Object.values(players);
+			var ids = Object.keys(room.players);
+			var names = Object.values(room.players);
 			if (data.found)
 			{
-				errorCount = 0;				
+				room.errorCount = 0;				
 			}
 			else
 			{
-				errorCount++ ; 
-				if(errorCount >= 3)
+				room.errorCount++ ; 
+				if(room.errorCount >= 3)
 				{
-					errorCount = 0 ;
-					if (isNextDealerChoiceIsNextPlayer)
+					room.errorCount = 0 ;
+					if (room.isNextDealerChoiceIsNextPlayer)
 					{
-						dealerIndex = (dealerIndex + 1) % playersCount;
+						room.dealerIndex = (room.dealerIndex + 1) % room.playersCount;
 					}
 					else
 					{
-						dealerIndex = nextPlayerIndex;
+						room.dealerIndex = room.nextPlayerIndex;
 					}
 				}
 			}
-			nextPlayerIndex = (nextPlayerIndex + 1) % playersCount;
-			if (nextPlayerIndex === dealerIndex)
+			room.nextPlayerIndex = (room.nextPlayerIndex + 1) % room.playersCount;
+			if (room.nextPlayerIndex === room.dealerIndex)
 			{
-				nextPlayerIndex = (nextPlayerIndex + 1) % playersCount;
+				room.nextPlayerIndex = (room.nextPlayerIndex + 1) % room.playersCount;
 			}
-			ret.isLastCardFromFamily = isLastCardFromFamilyRemoved(currentCard);
-			ret.newDisplayedCard = currentCard; 
-			ret.dealer = names[dealerIndex] ;
-			ret.nextPlayer = names[nextPlayerIndex];
+			ret.isLastCardFromFamily = isLastCardFromFamilyRemoved(room, room.currentCard);
+			ret.newDisplayedCard = room.currentCard; 
+			ret.dealer = names[room.dealerIndex] ;
+			ret.nextPlayer = names[room.nextPlayerIndex];
 			io.emit("serverupdate", ret);
 			
-			var c = getCard();
-			io.to(ids[dealerIndex]).emit("cardreceive", c);	
+			var c = getCard(room);
+			io.to(ids[room.dealerIndex]).emit("cardreceive", c);	
 		});
 
 	});
 	router.get('/', function (req, res, next) {
-		res.sendFile("fuckthedealer.html",  {root:'./views'});
+		res.sendFile("fuckthedealer.html",  {root:'./views/fuckthedealer'});
 	});
 
 	return router;
 }
 
-function isLastCardFromFamilyRemoved(card)
+function getRoomFromPlayerId(s_id)
+{
+	for(var i in rooms)
+	{
+		if (Object.keys(rooms[i].players).some(e => e === s_id))
+		{
+			return rooms[i];
+		}
+	}
+}
+
+function getPlayersbyRooms()
+{
+	var ret = {}
+	for(var roomId in rooms)
+	{
+		ret[roomId] = {
+			name: rooms[roomId].name,
+			owner: rooms[roomId].owner,
+			players:Object.values(rooms[roomId].players)
+		}
+	}
+	return ret;
+}
+
+function isLastCardFromFamilyRemoved(room, card)
 {	
 	//temporary solution in order to not crash when no card left
 	if (card)
 	{
-		return removedCards.filter(e => e[0] === card[0]).length === 4;
+		return room.removedCards.filter(e => e[0] === card[0]).length === 4;
 	}
 }
 
@@ -133,12 +255,13 @@ function generateAllCards()
 	return ret; 
 }
 
-function getCard()
+function getCard(room)
 {
+	var cards = room.cards
 	let r = Math.floor(Math.random() * Math.floor(cards.length));
 	let card = cards.splice(r, 1)[0];
-	removedCards.push(card);
-	currentCard = card;
+	room.removedCards.push(card);
+	room.currentCard = card;
 	return card;
 }
 

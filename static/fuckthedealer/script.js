@@ -8,6 +8,8 @@ var currentCard;
 var htmlDealerToken = "<div id='dealerToken' class='dealerToken'><br/>DEALER</div>";
 var htmlPlayerToken = "<div id='playerToken' class='dealerToken'><br/>JOUEUR</div>"
 
+var listOfPlayersTemplate = "<div class='game'></div>"
+
 var colorLogoHtml = {
 	"CARREAU": "<img src='/static/fuckthedealer/img/cartes/carreau.png'></img>",
 	"TREFLE": "<img src='/static/fuckthedealer/img/cartes/trefle.png'></img>",
@@ -15,22 +17,109 @@ var colorLogoHtml = {
 	"COEUR": "<img src='/static/fuckthedealer/img/cartes/coeur.png'></img>",
 }
 
+
+
+
 function playerConnection()
 {
 	name = $("#playerName").val();
-	$("#newGameButton").prop("disabled", false);
-	$("#connectionButton").html("Actualiser");
-	socket.emit("playerconnection", {"name": name}, addPlayers);
+	// $("#newGameButton").prop("disabled", false);
+	// $("#connectionButton").html("Actualiser");
+	socket.emit("playerconnection", {"name": name}, function(data){
+		$("#pseudoInput").hide(200);
+		$("#activeGamesContainer").show(200);
+		displayRooms(data);
+	});
+}
+
+function displayRooms(data)
+{
+	$("#activeGames").html("");
+	for(var i in data){
+		if (data[i].owner === socket.id)
+		{
+			$("#playerList").html("<ul></ul>");
+			var html = "";
+			data[i].players.forEach(p => html += "<li>" + p + "</li>");
+			$("#playerList > ul").append(html);
+			continue;
+		}
+		var html = "<div class='gameRoom'>"
+		html += "<h3>" + data[i].name + "</h3>"
+		html += "<ul>"
+		data[i].players.forEach(p => html += "<li>" + p + "</li>");
+		html += "</ul>";
+		html += "<button id='"+ i +"' onclick='joinRoom(this)'>Rejoindre</button></div>"
+		$("#activeGames").append(html)
+	}
+}
+
+socket.on("updaterooms", displayRooms);
+
+function joinRoom(btn)
+{
+	console.log(btn);
+	socket.emit("joinroom", {id:btn.id, name:name}, function(data){
+		if (!data.ok)
+		{
+			if (confirm("Vous etes propriétaire d'une partie qui va se lancer, voulez vous l'annuler et changer de partie ?"))
+			{
+				$("#playerList").html("<ul></ul>");
+				$("#pregameLobby").hide(100);
+				socket.emit("deleteroom", {id:btn.id, name:name});
+			}
+		}
+	});
+}
+
+function displayNewRoomHTML()
+{
+	$("#roomName").val("Partie de "+name);
+	$("#pregameLobby").show(200);
+}
+
+function createRoom()
+{
+	var roomName = $("#roomName").val();
+	$("#roomName").prop('readonly', true);
+	$("#waitingPlayers").show();
+	$("#newRoomButton").hide();
+	$("#newGaleButton").show();
+	socket.emit("newroom", {"name": roomName, "by":name});
 }
 
 function startGame(data)
 {
-	console.log("New game", data);
+	var dealerChoice = $("input[name='dealerChoice']:checked").val();
+	var nextDealerChoice = $("input[name='nextDealerChoice']:checked").val();
+	socket.emit("startgame", {dealerChoice: dealerChoice, nextDealerChoice: nextDealerChoice});
+	// players = data.players;
+	// dealer = data.dealer;
+	// nextPlayer = data.nextPlayer;
+
+
+
+	// $("#pregameLobby").hide(200);
+	// addPlayersInGame();
+	// $("#game").show(200);
+	// if (dealer === name)
+	// {
+	// 	$("#dealer").show(200);
+	// }
+	// else
+	// {
+	// 	$("#dealer").hide(200);
+	// }
+}
+
+function gameStarted(data)
+{
+	$("#home").hide();
+	console.log("Game started ! ", data)
 	players = data.players;
 	dealer = data.dealer;
 	nextPlayer = data.nextPlayer;
 
-	$("#pregameLobby").hide(200);
 	addPlayersInGame();
 	$("#game").show(200);
 	if (dealer === name)
@@ -41,15 +130,6 @@ function startGame(data)
 	{
 		$("#dealer").hide(200);
 	}
-}
-
-function addPlayers(names)
-{
-	var html = "";
-	players = names;
-	names.forEach(e => html += "<li>" + e + "</li>");
-
-	$("#playerList > ul").html(html)
 }
 
 function addPlayersInGame()
@@ -70,16 +150,7 @@ function addPlayersInGame()
 	$("#gamePlayerList").html(html);
 }
 
-function newGame()
-{
-	var dealerChoice = $("input[name='dealerChoice']:checked").val();
-	var nextDealerChoice = $("input[name='nextDealerChoice']:checked").val();
-	socket.emit("newgame", {dealerChoice: dealerChoice, nextDealerChoice: nextDealerChoice});
-}
-
-socket.on("playerupdate", addPlayers);
-
-socket.on("newgamecreated", startGame);
+socket.on("gamestarted", gameStarted);
 
 //game as dealer
 function found()
@@ -149,4 +220,3 @@ function onCardReceived(card)
 	console.log("CARD GET : ", card);
 	$("#cardImg").attr("src", "/static/fuckthedealer/img/cartes/" + card[1].toLowerCase() + "-" + card[0]+ ".jpg");
 }
-
