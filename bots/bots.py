@@ -7,7 +7,7 @@ import sys
 import traceback
 
 class Bot(discord.Client):
-	tabWord={'cheh','honteux','kaamelott','suce','baise','wizz','vinjo', '_con', 'picole', 'monique'}
+	tabWord={'cheh','honteux','kaamelott','suce','baise','wizz','vinjo', '_con', 'picole', 'monique','indignite','melenchon'}
 	
 	def __init__(self):
 		super().__init__()
