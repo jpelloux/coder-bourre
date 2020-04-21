@@ -34,6 +34,8 @@ h1
 #activeGamesContainer
 {
 	display:none;
+	width: 85%;
+	float: left;
 }
 #pregameLobby
 {
@@ -42,6 +44,7 @@ h1
 	padding: 15px;
 	width: 33%;
 	border: solid 1px black;
+	float: left;
 }
 #waitingPlayers
 {
@@ -55,6 +58,22 @@ h1
 {
 	border: solid 1px black;
 	margin: 10px;
+	width: 20%;
+	float: left;
+}
+#statusbar
+{
+	float: right;
+	width: 15%;
+	height: 100%;
+	margin: 0;
+	font-size: small;
+	font-style: italic;
+	/* border: solid 1px red; */
+}
+#statusbar p
+{
+	margin: 8px 0px 8px 0px;
 }
 #game
 {

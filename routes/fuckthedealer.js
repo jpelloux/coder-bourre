@@ -43,6 +43,7 @@ function main(io)
 		socket.on("playerconnection", function(data, callback){
 			
 			console.log("Player connection : ", data.name);
+			statusUpdate(io, data.name + " s'est connecté !")
 			callback(getPlayersbyRooms());
 		});
 
@@ -59,6 +60,7 @@ function main(io)
 			}
 			console.log("Room created : ", rooms[roomId]);
 			io.emit("updaterooms", getPlayersbyRooms());
+			statusUpdate(io, "Nouveau salon créé : " + data.name + " par " + data.by);
 		});
 
 		socket.on("joinroom", function(data, callback){
@@ -79,13 +81,16 @@ function main(io)
 			rooms[data.id].players[socket.id] = data.name
 			io.emit("updaterooms", getPlayersbyRooms());
 			callback({"ok":true});
+			statusUpdate(io, data.name + " a rejoint le salon " + rooms[data.id].name);
 		});
 
 		socket.on("deleteroom", function(data){
+			var deletedRoomName =""
 			for (var i in rooms)
 			{
 				if(rooms[i].owner === socket.id)
 				{
+					deletedRoomName = rooms[i].name;
 					delete rooms[i];
 				}
 			}
@@ -97,22 +102,32 @@ function main(io)
 			//Add in the new one
 			rooms[data.id].players[socket.id] = data.name
 			io.emit("updaterooms", getPlayersbyRooms());
+			statusUpdate(io, "Le salon " + deletedRoomName + " a été fermé");
+			statusUpdate(io, data.name + " a rejoint le salon " + rooms[data.id].name);
+		
 		});
 		
 		socket.on("disconnect", function () {
-			console.log("A player as disconnected")
+			console.log("A player as disconnected");
+			var disconnectedPlayerName = ""
 			for (var i in rooms)
 			{
 				if(rooms[i].owner === socket.id)
 				{
+					disconnectedPlayerName = rooms[i].players[socket.id];
 					delete rooms[i];
 				}
 			}
 			//Remove from previous room
 			for(var i in rooms){
-				delete rooms[i].players[socket.id]
+				if (rooms[i].players[socket.id])
+				{
+					disconnectedPlayerName = rooms[i].players[socket.id];
+					delete rooms[i].players[socket.id];
+				}
 			}
 			io.emit("updaterooms", getPlayersbyRooms());
+			statusUpdate(io, disconnectedPlayerName + " s'est deconnecté");
 		});
 
 		socket.on("startgame", function(clientData){
@@ -194,6 +209,7 @@ function main(io)
 			ret.newDisplayedCard = room.currentCard; 
 			ret.dealer = names[room.dealerIndex] ;
 			ret.nextPlayer = names[room.nextPlayerIndex];
+			//TODO emit only on room players
 			io.emit("serverupdate", ret);
 			
 			var c = getCard(room);
@@ -263,6 +279,11 @@ function getCard(room)
 	room.removedCards.push(card);
 	room.currentCard = card;
 	return card;
+}
+
+function statusUpdate(io, message)
+{
+	io.emit("statusupdate", {msg:message});
 }
 
 module.exports = main;

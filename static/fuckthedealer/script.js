@@ -220,3 +220,8 @@ function onCardReceived(card)
 	console.log("CARD GET : ", card);
 	$("#cardImg").attr("src", "/static/fuckthedealer/img/cartes/" + card[1].toLowerCase() + "-" + card[0]+ ".jpg");
 }
+
+//other
+socket.on("statusupdate", function(data){
+	$("#statusbar").append("<p>" + data.msg + "</p>");
+});
