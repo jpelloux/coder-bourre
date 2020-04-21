@@ -121,7 +121,7 @@ function dispPossibleCalls(call){
     var values = "";
     for (var i=1; i<=6; i++){
         values += '<p>'
-        for (var j=1; j<=15; j++){
+        for (var j=1; j<=20; j++){
             if(palificoRound){
                 if(call == '') {// case of the first call of the round
                     values += '<span onClick="valuePressed(this.id)" id=\"value_' + i.toString() + '_' +  j.toString() + '\">';
